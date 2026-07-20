@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family: Arial, sans-serif; }
+  body { width:1200px; height:675px; background:#eef1f5; overflow:hidden; }
+  .top { height:58px; background:#032954; display:flex; align-items:center; padding:0 22px; gap:14px; }
+  .top img { height:34px; }
+  .top .t { color:#fff; font-size:19px; font-weight:bold; }
+  .top .s { color:#8fc1f2; font-size:12px; margin-inline-start:auto; }
+  .grid { padding:16px 18px; display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+  .kpi { background:#fff; border:1px solid #dde4ee; border-radius:8px; padding:14px 16px; }
+  .kpi .l { font-size:11px; color:#53565A; text-transform:uppercase; letter-spacing:.5px; }
+  .kpi .v { font-size:30px; font-weight:bold; color:#032954; margin-top:6px; }
+  .kpi .d { font-size:11px; margin-top:5px; }
+  .up { color:#0b6e4f; } .down { color:#b3261e; }
+  .row2 { padding:0 18px; display:grid; grid-template-columns: 1.35fr 1fr 0.9fr; gap:14px; }
+  .card { background:#fff; border:1px solid #dde4ee; border-radius:8px; padding:14px 16px; height:360px; }
+  .card h3 { font-size:13px; color:#032954; margin-bottom:12px; }
+  .bar { display:flex; align-items:center; gap:8px; margin-bottom:13px; }
+  .bar .n { width:190px; font-size:11.5px; color:#333; text-align:right; }
+  .bar .b { height:20px; border-radius:3px; background:#0766D1; }
+  .bar .x { font-size:11px; color:#53565A; }
+  svg text { font-family: Arial; }
+</style></head><body>
+  <div class="top">
+    <img src="ncgr-logo.png">
+    <div class="t">Procurement Integrity Dashboard</div>
+    <div class="s">Data refreshed 06 Jul 2026 · 09:12 AST</div>
+  </div>
+  <div class="grid">
+    <div class="kpi"><div class="l">Tenders (2023–26)</div><div class="v">1,130</div><div class="d up">▲ 94 this quarter</div></div>
+    <div class="kpi"><div class="l">Awarded value</div><div class="v">SAR 1.01B</div><div class="d up">▲ 6.2% vs last year</div></div>
+    <div class="kpi"><div class="l">Open alerts</div><div class="v">122</div><div class="d down">▼ 75 high severity</div></div>
+    <div class="kpi"><div class="l">Single-bid share</div><div class="v">11.3%</div><div class="d down">▲ target &lt; 8%</div></div>
+  </div>
+  <div class="row2">
+    <div class="card">
+      <h3>Open alerts by type</h3>
+      <div class="bar"><div class="n">Bid rotation pattern</div><div class="b" style="width:290px"></div><div class="x">37</div></div>
+      <div class="bar"><div class="n">Price anomaly</div><div class="b" style="width:227px"></div><div class="x">29</div></div>
+      <div class="bar"><div class="n">Repeated single-bidder award</div><div class="b" style="width:196px"></div><div class="x">25</div></div>
+      <div class="bar"><div class="n">Split purchasing</div><div class="b" style="width:149px"></div><div class="x">19</div></div>
+      <div class="bar"><div class="n">Duplicate invoice</div><div class="b" style="width:141px"></div><div class="x">18</div></div>
+      <div class="bar"><div class="n">Short submission window</div><div class="b" style="width:94px"></div><div class="x">12</div></div>
+      <div class="bar"><div class="n">New supplier win</div><div class="b" style="width:47px"></div><div class="x">6</div></div>
+    </div>
+    <div class="card">
+      <h3>Awarded value by month (SAR M)</h3>
+      <svg width="100%" height="300" viewBox="0 0 380 300">
+        <polyline fill="none" stroke="#dde4ee" stroke-width="1" points="30,250 370,250"/>
+        <polyline fill="none" stroke="#dde4ee" stroke-width="1" points="30,175 370,175"/>
+        <polyline fill="none" stroke="#dde4ee" stroke-width="1" points="30,100 370,100"/>
+        <text x="8" y="254" font-size="10" fill="#888">0</text>
+        <text x="8" y="179" font-size="10" fill="#888">15</text>
+        <text x="8" y="104" font-size="10" fill="#888">30</text>
+        <polygon fill="#0766D122" points="30,250 30,205 58,190 86,198 114,168 142,175 170,150 198,158 226,130 254,142 282,118 310,96 338,110 366,88 366,250"/>
+        <polyline fill="none" stroke="#0766D1" stroke-width="2.5"
+          points="30,205 58,190 86,198 114,168 142,175 170,150 198,158 226,130 254,142 282,118 310,96 338,110 366,88"/>
+        <circle cx="366" cy="88" r="4" fill="#0766D1"/>
+        <text x="30" y="272" font-size="10" fill="#888">Jul 25</text>
+        <text x="190" y="272" font-size="10" fill="#888">Jan 26</text>
+        <text x="340" y="272" font-size="10" fill="#888">Jun 26</text>
+      </svg>
+    </div>
+    <div class="card">
+      <h3>Awards by method</h3>
+      <svg width="100%" height="230" viewBox="0 0 240 230">
+        <g transform="translate(120,115)">
+          <circle r="78" fill="none" stroke="#0766D1" stroke-width="34"
+            stroke-dasharray="382 490" transform="rotate(-90)"/>
+          <circle r="78" fill="none" stroke="#0b6e4f" stroke-width="34"
+            stroke-dasharray="59 490" stroke-dashoffset="-382" transform="rotate(-90)"/>
+          <circle r="78" fill="none" stroke="#f2a900" stroke-width="34"
+            stroke-dasharray="49 490" stroke-dashoffset="-441" transform="rotate(-90)"/>
+          <text text-anchor="middle" y="-2" font-size="24" font-weight="bold" fill="#032954">78%</text>
+          <text text-anchor="middle" y="16" font-size="10" fill="#53565A">open tender</text>
+        </g>
+      </svg>
+      <div style="font-size:11px; color:#333; line-height:1.9; padding-left:8px">
+        <span style="color:#0766D1">●</span> Open tender 78%&nbsp;&nbsp;
+        <span style="color:#0b6e4f">●</span> Direct 10.2%<br>
+        <span style="color:#f2a900">●</span> Framework 11.8%
+      </div>
+    </div>
+  </div>
+</body></html>

@@ -1,0 +1,329 @@
+# Vendored from sas-mcp-server / SAS_Use_Case.
+# Copyright © 2025, SAS Institute Inc., Cary, NC, USA.  All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+import asyncio
+import os
+import httpx
+from .config import VIYA_ENDPOINT, CONTEXT_NAME, SSL_VERIFY, logger
+
+# Safety net: the longest we will poll a single compute job before giving up,
+# so a stuck job can never hang the agent indefinitely. Generous by default
+# (1 hour) so legitimate long-running SAS code (heavy PROCs, large-data steps)
+# is unaffected; override with the JOB_POLL_TIMEOUT environment variable
+# (seconds) — raise it for very long workloads, lower it for snappier failure.
+JOB_POLL_TIMEOUT = float(os.getenv("JOB_POLL_TIMEOUT", "3600"))
+
+
+# ---------------------------------------------------------------------------
+# Generic API helpers (used by new tools)
+# ---------------------------------------------------------------------------
+
+async def _get_json(url, client, params=None, accept="application/json"):
+    """GET a JSON response from a Viya REST endpoint."""
+    full_url = f"{VIYA_ENDPOINT}{url}"
+    resp = await client.get(full_url, headers={"Accept": accept}, params=params or {})
+    resp.raise_for_status()
+    return resp.json()
+
+
+async def _get_paged_items(url, client, limit=20, start=0, filters=None, extra_params=None):
+    """GET a paginated collection and return the items list plus total count."""
+    params = {"start": start, "limit": limit}
+    if filters:
+        params["filter"] = filters
+    if extra_params:
+        params.update(extra_params)
+    data = await _get_json(url, client, params=params,
+                           accept="application/vnd.sas.collection+json")
+    return data.get("items", []), data.get("count", 0)
+
+
+async def _post_json(url, client, body=None, params=None, accept="application/json"):
+    """POST JSON to a Viya REST endpoint and return the response JSON."""
+    full_url = f"{VIYA_ENDPOINT}{url}"
+    resp = await client.post(full_url, json=body,
+                             headers={"Content-Type": "application/json",
+                                      "Accept": accept},
+                             params=params or {})
+    resp.raise_for_status()
+    if resp.status_code == 204 or not resp.content:
+        return {}
+    return resp.json()
+
+
+async def _put_data(url, client, data, content_type="text/csv", params=None):
+    """PUT raw data (e.g. CSV upload) to a Viya REST endpoint."""
+    full_url = f"{VIYA_ENDPOINT}{url}"
+    resp = await client.put(full_url, content=data,
+                            headers={"Content-Type": content_type},
+                            params=params or {})
+    resp.raise_for_status()
+    if resp.status_code == 204 or not resp.content:
+        return {}
+    return resp.json()
+
+
+async def _delete_resource(url, client):
+    """DELETE a Viya REST resource."""
+    full_url = f"{VIYA_ENDPOINT}{url}"
+    resp = await client.delete(full_url)
+    resp.raise_for_status()
+
+
+def _make_client(token):
+    """Create an httpx.AsyncClient with auth headers for Viya API calls."""
+    if not token.startswith("Bearer "):
+        token = f"Bearer {token}"
+    headers = {"Authorization": token}
+    return httpx.AsyncClient(headers=headers, verify=SSL_VERIFY, timeout=300.0)
+
+
+# ---------------------------------------------------------------------------
+# Original helpers (log/listing fetching)
+# ---------------------------------------------------------------------------
+
+async def _get_text(url, client, verify=True, extra_params=None):
+    # Try text/plain in one shot
+    full_url = f"{VIYA_ENDPOINT}{url}"
+    r = await client.get(
+        full_url, headers={"Accept": "text/plain"}, params=extra_params or {}
+    )
+    if r.status_code == 200 and r.headers.get("Content-Type", "").startswith(
+        "text/plain"
+    ):
+        return r.text
+    # Some deployments need an explicit query hint
+    r = await client.get(
+        full_url,
+        headers={"Accept": "text/plain"},
+        params={**(extra_params or {}), "type": "text"},
+    )
+    if r.status_code == 200 and r.headers.get("Content-Type", "").startswith(
+        "text/plain"
+    ):
+        return r.text
+    return None  # caller will fallback to paged JSON
+
+
+async def _get_paged_lines(url, client, page_limit=10000):
+    start = 0
+    lines = []
+    headers = {"Accept": "application/vnd.sas.collection+json"}
+    full_url = f"{VIYA_ENDPOINT}{url}"
+    while True:
+        resp = await client.get(
+            full_url, headers=headers, params={"start": start, "limit": page_limit}
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        items = data.get("items", [])
+        if not items:
+            break
+        # items can be dicts like {"line": "..."} or {"text": "..."} depending on endpoint
+        for it in items:
+            lines.append(it.get("line") or it.get("text") or "")
+        if len(items) < page_limit:
+            break
+        start += page_limit
+    return "\n".join(lines)
+
+
+async def fetch_full_job_log(client, session_id, job_id):
+    base = f"/compute/sessions/{session_id}/jobs/{job_id}"
+    # 1) Try whole job log as text
+    text = await _get_text(f"{base}/log", client)
+    if text is not None:
+        return text
+    # 2) Fallback to paged JSON
+    return await _get_paged_lines(f"{base}/log", client)
+
+
+async def fetch_full_job_listing(client, session_id, job_id):
+    base = f"/compute/sessions/{session_id}/jobs/{job_id}"
+    text = await _get_text(f"{base}/listing", client)
+    if text is not None:
+        return text
+    return await _get_paged_lines(f"{base}/listing", client)
+
+
+async def fetch_full_session_log(client, session_id):
+    # Entire session log (useful if you want everything the session produced)
+    text = await _get_text(f"/compute/sessions/{session_id}/log", client)
+    if text is not None:
+        return text
+    return await _get_paged_lines(f"/compute/sessions/{session_id}/log", client)
+
+
+async def get_context_id(client, context_name):
+    url = f"{VIYA_ENDPOINT}/compute/contexts?name={context_name}"
+    resp = await client.get(url)
+    coll = resp.json()
+    items = coll.get("items", [])
+    if not items:
+        raise RuntimeError(f"Compute context not found: {context_name}")
+    return items[0]["id"]
+
+
+async def create_session(client, context_id, name="py-parallel"):
+    url = f"{VIYA_ENDPOINT}/compute/contexts/{context_id}/sessions"
+    resp = await client.post(url, json={"name": name})
+    return resp.json()["id"]
+
+
+async def submit_job(client, session_id, code):
+    body = {"code": code.splitlines()}
+    url = f"{VIYA_ENDPOINT}/compute/sessions/{session_id}/jobs"
+    resp = await client.post(url, json=body)
+    job = resp.json()
+    return job["id"]
+
+
+async def wait_job(client, session_id, job_id, poll=2, timeout=None):
+    timeout = JOB_POLL_TIMEOUT if timeout is None else timeout
+    deadline = asyncio.get_running_loop().time() + timeout
+    while True:
+        state_url = f"{VIYA_ENDPOINT}/compute/sessions/{session_id}/jobs/{job_id}/state"
+        resp = await client.get(state_url)
+        state = resp.text.strip()
+        if state in ("completed", "error", "warning", "canceled"):
+            # Fetch log
+            log_url = f"{VIYA_ENDPOINT}/compute/sessions/{session_id}/jobs/{job_id}/log"
+            log_resp = await client.get(log_url)
+            log = log_resp.json()
+            lines = [item["line"] for item in log.get("items", [])]
+            log_text = "\n".join(lines)
+
+            # Fetch listing (plain text output)
+            listing_url = (
+                f"{VIYA_ENDPOINT}/compute/sessions/{session_id}/jobs/{job_id}/listing"
+            )
+            listing_resp = await client.get(listing_url)
+            listing_json = listing_resp.json()
+            listing_lines = [item["line"] for item in listing_json.get("items", [])]
+            listing_text = (
+                "\n".join(listing_lines) if listing_lines else "(no listing output)"
+            )
+
+            return state, log_text, listing_text
+        if asyncio.get_running_loop().time() > deadline:
+            raise TimeoutError(
+                f"SAS job {job_id} did not finish within {timeout:.0f}s "
+                f"(last state: '{state}'). Increase JOB_POLL_TIMEOUT if this "
+                f"job legitimately runs longer."
+            )
+        await asyncio.sleep(poll)
+
+
+async def run_one_snippet(snippet_data, snippet_id, token):
+    code = snippet_data
+
+    logger.info(f"Creating session with token (length: {len(token)})")
+
+    async with _make_client(token) as client:
+        ctx_id = await get_context_id(client, CONTEXT_NAME)
+        sid = await create_session(client, ctx_id, name="py-parallel")
+        logger.info(f"Session created: {sid}")
+        try:
+            jid = await submit_job(client, sid, code)
+            logger.info(f"Job submitted: {jid}")
+            result = await wait_job(client, sid, jid)
+            logger.info(f"Job completed: {result[0]}")
+            return (snippet_id, *result)
+        except Exception as e:
+            logger.error(f"Error executing SAS job: {str(e)}")
+            raise e
+        finally:
+            try:
+                delete_url = f"{VIYA_ENDPOINT}/compute/sessions/{sid}"
+                await client.delete(delete_url)
+                logger.info(f"Session {sid} deleted successfully")
+            except Exception as e:
+                # Best-effort cleanup: never let a failed session delete mask
+                # the real job result or the original error from the try block.
+                logger.error(f"Failed to delete session {sid}: {str(e)}")
+
+
+# ---------------------------------------------------------------------------
+# Structured query helpers (used by the use-case query/grounding tools)
+# ---------------------------------------------------------------------------
+
+async def fetch_table_columns(client, server, caslib, table, limit=500):
+    """Return column metadata for a CAS table via CAS Management.
+
+    A light wrapper used to ground the agent (e.g. inside get_use_case) without
+    making it write PROC CONTENTS and parse the log.
+    """
+    items, _ = await _get_paged_items(
+        f"/casManagement/servers/{server}/caslibs/{caslib}/tables/{table}/columns",
+        client, limit=limit)
+    return [{"name": c.get("name"), "type": c.get("type"),
+             "label": c.get("label", ""), "format": c.get("format", "")}
+            for c in items]
+
+
+async def fetch_session_table_rows(client, session_id, libref, table_name,
+                                   limit=100):
+    """Fetch a table's columns and rows from inside a live compute session.
+
+    Uses the Compute data API
+    (``/compute/sessions/{id}/data/{libref}/{table}/...``) so a result built in
+    WORK can be read back as structured rows before the session is torn down.
+    Returns ``(column_names, rows)`` where each row is a ``{column: value}`` dict.
+    """
+    base = f"{VIYA_ENDPOINT}/compute/sessions/{session_id}/data/{libref}/{table_name}"
+    col_resp = await client.get(
+        f"{base}/columns", params={"start": 0, "limit": 10000},
+        headers={"Accept": "application/vnd.sas.collection+json"})
+    col_resp.raise_for_status()
+    col_names = [c.get("name") for c in col_resp.json().get("items", [])]
+    row_resp = await client.get(
+        f"{base}/rows", params={"start": 0, "limit": limit},
+        headers={"Accept": "application/vnd.sas.collection+json"})
+    row_resp.raise_for_status()
+    rows = []
+    for item in row_resp.json().get("items", []):
+        cells = item.get("cells", [])
+        rows.append(dict(zip(col_names, cells)))
+    return col_names, rows
+
+
+async def run_query_rows(sql, token, limit=100):
+    """Run a single SQL SELECT and return the result set as structured rows.
+
+    Wraps the SELECT in ``proc sql`` (writing to ``WORK._MCPQ``) inside a fresh
+    compute session, then reads the result back through the Compute data API —
+    so it works even though each call uses a throwaway session that is deleted
+    afterwards. On success returns ``{"error": False, "columns": [...],
+    "rows": [...], "rowCount": n}``; on a SAS error returns ``{"error": True,
+    "state": ..., "log": ...}`` so the caller can correct the query.
+    """
+    statement = (sql or "").strip().rstrip(";")
+    # `caslib _all_ assign` exposes CAS caslibs as SAS librefs so the SELECT can
+    # reference the use-case table by its caslib-qualified name.
+    code = (
+        "cas _mcpcas;\n"
+        "caslib _all_ assign;\n"
+        "proc sql;\n"
+        "  create table work._mcpq as\n"
+        f"  {statement};\n"
+        "quit;"
+    )
+    async with _make_client(token) as client:
+        ctx_id = await get_context_id(client, CONTEXT_NAME)
+        sid = await create_session(client, ctx_id, name="mcp-query")
+        try:
+            jid = await submit_job(client, sid, code)
+            state, log_text, _ = await wait_job(client, sid, jid)
+            if state not in ("completed", "warning"):
+                return {"error": True, "state": state, "log": log_text,
+                        "columns": [], "rows": []}
+            cols, rows = await fetch_session_table_rows(
+                client, sid, "WORK", "_MCPQ", limit=limit)
+            return {"error": False, "state": state, "columns": cols,
+                    "rows": rows, "rowCount": len(rows)}
+        finally:
+            try:
+                await client.delete(f"{VIYA_ENDPOINT}/compute/sessions/{sid}")
+            except Exception as e:
+                logger.error(f"Failed to delete query session {sid}: {str(e)}")

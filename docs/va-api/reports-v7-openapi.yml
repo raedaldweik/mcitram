@@ -1,0 +1,3509 @@
+openapi: 3.0.3
+info:
+  version: "7"
+  title: Reports
+  description: >
+    You can use the Reports API to create, read, and update reports. This API enables basic tasks such as moving or renaming reports, as well as editorial tasks such as reading, writing, and updating report content.
+  termsOfService: https://www.sas.com/en_us/legal/copyright.html
+  contact:
+    name: SAS Developers
+    url: https://developer.sas.com
+    email: devex@sas.com
+servers:
+  - url: http://example.com/reports
+    description: The reports API server.
+tags:
+  - name: Root
+    description: The list of Reports service links.
+  - name: Report
+    description: The operations for the report resource.
+  - name: ReportContent
+    description: The operations for the report content resource.
+  - name: ReportState
+    description: The operations for the report state resource.
+  - name: ReportStateContent
+    description: The operations for the report state content resource.
+paths:
+  /:
+    head:
+      summary: Get header information for the service
+      description: Retrieves header information for the service. It can also be used to verify that the service is available.
+      operationId: headersForRoot
+      tags:
+        - Root
+      responses:
+        "200":
+          description: Service is running.
+          headers:
+            Content-Type:
+              description: The content type of the response, `application/vnd.sas.api+json`.
+              schema:
+                type: string
+        "404":
+          description: Service is not available.
+    get:
+      summary: Get a collection of top-level links
+      description: Returns a collection of links to the top-level collections surfaced through this API.
+      operationId: root
+      tags:
+        - Root
+      responses:
+        "200":
+          description: Top-level links.
+          headers:
+            Content-Type:
+              description: The content type of the response, `application/vnd.sas.api+json`.
+              schema:
+                type: string
+          content:
+            application/vnd.sas.api+json:
+              schema:
+                $ref: "#/components/schemas/reportApi"
+            application/json:
+              schema:
+                $ref: "#/components/schemas/reportApi"
+        "404":
+          description: Service is not available.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  $ref: "#/components/examples/ReportServiceNotFound"
+  /reports#reports:
+    get:
+      summary: Get a collection of reports
+      description: Returns a collection of reports with standard paging, filtering, and sorting options.
+      operationId: getReports
+      tags:
+        - Report
+      parameters:
+        - name: Accept-Item
+          description: Optional, media type of collection item.
+          in: header
+          required: false
+          schema:
+            type: string
+            enum:
+              - application/vnd.sas.summary+json
+              - application/vnd.sas.report+json
+            default: application/vnd.sas.summary+json
+        - $ref: "#/components/parameters/AcceptLanguage"
+        - $ref: "#/components/parameters/Start"
+        - $ref: "#/components/parameters/Limit"
+        - name: filter
+          in: query
+          description: The criteria for filtering. Report attributes that can be used are `id`, `name`, `description`, `createdBy`, `creationTimeStamp`, `modifiedBy`, and `modifiedTimeStamp`. See [`Filtering in REST APIs`](https://developer.sas.com/rest-apis/reports-v7/docs/getting-started/usage-notes#filtering).
+          required: false
+          schema:
+            type: string
+            format: filter-criteria
+        - name: sortBy
+          in: query
+          description: The criteria for sorting. Report attributes that can be used are `id`, `name`, `description`, `createdBy`, `creationTimeStamp`, `modifiedBy`, and `modifiedTimeStamp`. See [`Sorting in REST APIs`](https://developer.sas.com/rest-apis/reports-v7/docs/getting-started/usage-notes#sorting).
+          required: false
+          schema:
+            type: string
+            format: sort-criteria
+      responses:
+        "200":
+          description: The reports in resource summary format.
+          content:
+            application/vnd.sas.collection+json:
+              schema:
+                $ref: "#/components/schemas/reportCollection"
+              examples:
+                reports-collection:
+                  $ref: "#/components/examples/ReportCollection.v1"
+                report-summaries-collection:
+                  $ref: "#/components/examples/ReportSummaryCollection.v1"
+            application/json:
+              schema:
+                $ref: "#/components/schemas/reportCollection"
+              examples:
+                reports-collection:
+                  $ref: "#/components/examples/ReportCollection.v1"
+                report-summaries-collection:
+                  $ref: "#/components/examples/ReportSummaryCollection.v1"
+        "404":
+          description: Reports collection not found, possibly due to incorrect URI or media type.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  summary: Not found error
+                  value:
+                    errorCode: 404
+                    message: Not Found
+                    details:
+                      - "traceId: 85b7763697b4ba63"
+                      - "path: /reports/reports"
+                    version: 2
+                    httpStatusCode: 404
+  /reports:
+    post:
+      summary: Create report
+      description: Creates a new report and adds it to a folder as a child.
+      operationId: createReport
+      tags:
+        - Report
+      parameters:
+        - $ref: "#/components/parameters/ParentFolderUri"
+      requestBody:
+        $ref: "#/components/requestBodies/NewReport"
+      responses:
+        "201":
+          description: New report created.  Use the `updateContent` link in the new report to store the report content. `ETag` header is returned. See [`Conditional Operations`](https://developer.sas.com/rest-apis/reports-v7/docs/getting-started/usage-notes#conditional-operations).
+          headers:
+            Location:
+              $ref: "#/components/headers/Location"
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Last-Modified:
+              $ref: "#/components/headers/Last-Modified"
+          content:
+            application/vnd.sas.report+json:
+              schema:
+                $ref: "#/components/schemas/report"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+            application/json:
+              schema:
+                $ref: "#/components/schemas/report"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+        "400":
+          description: The input report is invalid, or the `parentFolderUri` is not a valid folder URI or is not found.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  summary: Bad request error
+                  value:
+                    errorCode: 10736
+                    message: An error occurred. The resource could not be added as a folder member because the specified folder URI cannot be found.
+                    details:
+                      - "traceId: 03b5f0c710eca2d6"
+                      - "path: /reports/reports"
+                    version: 2
+                    httpStatusCode: 400
+        "409":
+          description: A report with the same name is already a member of the folder.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  summary: Conflict error
+                  value:
+                    errorCode: 10708
+                    message: An error occurred. A conflict occurred when adding the resource as a member to the folder.
+                    details:
+                      - "traceId: 23307dd5dead24fc"
+                      - "path: /reports/reports"
+                    version: 2
+                    httpStatusCode: 409
+  "/reports/{reportId}#standard":
+    head:
+      summary: Check report status
+      description: Returns the headers for a report, including `ETag`.  See [`Conditional Operations`](https://developer.sas.com/rest-apis/reports-v7/docs/getting-started/usage-notes#conditional-operations).
+      operationId: headersForGetReport
+      tags:
+        - Report
+      parameters:
+        - $ref: "#/components/parameters/ReportId"
+        - $ref: "#/components/parameters/IfNoneMatch"
+        - $ref: "#/components/parameters/IfModifiedSince"
+      responses:
+        "200":
+          description: Check status operation is successful.
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Last-Modified:
+              $ref: "#/components/headers/Last-Modified"
+        "404":
+          description: Report does not exist.
+    get:
+      summary: Get a report
+      description: Returns the specified report, including `ETag` header.  See [`Conditional Operations`](https://developer.sas.com/rest-apis/reports-v7/docs/getting-started/usage-notes#conditional-operations).
+      operationId: getReport
+      tags:
+        - Report
+      parameters:
+        - $ref: "#/components/parameters/ReportId"
+        - $ref: "#/components/parameters/IfNoneMatch"
+        - $ref: "#/components/parameters/IfModifiedSince"
+      responses:
+        "200":
+          description: Returned the report and `ETag` header.
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Last-Modified:
+              $ref: "#/components/headers/Last-Modified"
+          content:
+            application/vnd.sas.report+json:
+              schema:
+                $ref: "#/components/schemas/report"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+            application/json:
+              schema:
+                $ref: "#/components/schemas/report"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+        "404":
+          description: Report does not exist.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  $ref: "#/components/examples/ReportNotFound"
+  "/reports/{reportId}#resourceSummary":
+    head:
+      summary: Check report resource summary status
+      description: Returns the headers for a report resource summary, including `modifiedTimeStamp`.
+      operationId: headersForGetReportResourceSummary
+      tags:
+        - Report
+      parameters:
+        - $ref: "#/components/parameters/ReportId"
+      responses:
+        "200":
+          description: Check status operation is successful.
+          headers:
+            Last-Modified:
+              $ref: "#/components/headers/Last-Modified"
+        "404":
+          description: Report resource summary does not exist.
+    get:
+      summary: Get resource summary report
+      description: Returns the specified report in resource summary format.
+      operationId: getReportAsResourceSummary
+      tags:
+        - Report
+      parameters:
+        - $ref: "#/components/parameters/ReportId"
+      responses:
+        "200":
+          description: Returns the report in resource summary format.
+          headers:
+            Last-Modified:
+              $ref: "#/components/headers/Last-Modified"
+          content:
+            application/vnd.sas.summary+json:
+              schema:
+                $ref: "#/components/schemas/reportSummary"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+        "404":
+          description: Report resource summary does not exist.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  $ref: "#/components/examples/ReportNotFound"
+  "/reports/{reportId}":
+    delete:
+      summary: Delete a report
+      description: Deletes the specified report and its content. Remove the report from the parent folder.
+      operationId: deleteReport
+      tags:
+        - Report
+      parameters:
+        - $ref: "#/components/parameters/ReportId"
+      responses:
+        "204":
+          description: Report is deleted.
+        "404":
+          description: Report does not exist.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  $ref: "#/components/examples/ReportNotFound"
+    put:
+      summary: Update a report
+      description: Updates the specified report. Requires an `If-Match` or `If-Unmodified-Since` request header.  See [`Conditional Operations`](https://developer.sas.com/rest-apis/reports-v7/docs/getting-started/usage-notes#conditional-operations).
+      operationId: updateReport
+      tags:
+        - Report
+      parameters:
+        - $ref: "#/components/parameters/ReportId"
+        - $ref: "#/components/parameters/IfMatch"
+        - $ref: "#/components/parameters/IfUnmodifiedSince"
+      requestBody:
+        $ref: "#/components/requestBodies/UpdateReport"
+      responses:
+        "200":
+          description: Report was updated.
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Last-Modified:
+              $ref: "#/components/headers/Last-Modified"
+          content:
+            application/vnd.sas.report+json:
+              schema:
+                $ref: "#/components/schemas/report"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+            application/json:
+              schema:
+                $ref: "#/components/schemas/report"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+        "400":
+          description: The input report was not valid.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  summary: Bad request error
+                  value:
+                    errorCode": 400
+                    message: An error occurred. The report could not be updated due to bad content.
+                    details:
+                      - "traceId: 47a466b8c6c9e386"
+                      - "path: /reports/reports/4eb3b675-e107-4857-a8f4-51aa555ac7e7"
+                    version: 2
+                    httpStatusCode: 400
+        "404":
+          description: Report does not exist.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  $ref: "#/components/examples/ReportNotFound"
+        "412":
+          description: The `If-Match` or `If-Unmodified-Since` header did not match the current version of the resource.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  $ref: "#/components/examples/ReportETagNotMatched"
+        "428":
+          description: The `If-Match` or `If-Unmodified-Since` was not provided when updating the report.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  $ref: "#/components/examples/ReportETagMissing"
+  "/reports/{reportId}/content":
+    head:
+      summary: Check status of report content
+      description: Returns the headers for report content, including the `ETag`.  See [`Conditional Operations`](https://developer.sas.com/rest-apis/reports-v7/docs/getting-started/usage-notes#conditional-operations).
+      operationId: headersForGetContent
+      tags:
+        - ReportContent
+      parameters:
+        - $ref: "#/components/parameters/ReportId"
+        - $ref: "#/components/parameters/AcceptLanguage"
+        - $ref: "#/components/parameters/IfNoneMatch"
+        - $ref: "#/components/parameters/IfModifiedSince"
+      responses:
+        "200":
+          description: Check status operation was successful.
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Last-Modified:
+              $ref: "#/components/headers/Last-Modified"
+            Content-Language:
+              $ref: "#/components/headers/Content-Language"
+        "304":
+          $ref: "#/components/responses/Redirect304"
+        "404":
+          description: Report or report content does not exist.
+    get:
+      summary: Get report content
+      description: Returns the report content, including `ETag`.  See [`Conditional Operations`](https://developer.sas.com/rest-apis/reports-v7/docs/getting-started/usage-notes#conditional-operations).
+      operationId: getContent
+      tags:
+        - ReportContent
+      parameters:
+        - $ref: "#/components/parameters/ReportId"
+        - $ref: "#/components/parameters/AcceptLanguage"
+        - $ref: "#/components/parameters/IfNoneMatch"
+        - $ref: "#/components/parameters/IfModifiedSince"
+      responses:
+        "200":
+          description: Report content.
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Last-Modified:
+              $ref: "#/components/headers/Last-Modified"
+            Content-Language:
+              $ref: "#/components/headers/Content-Language"
+          content:
+            application/vnd.sas.report.content+json:
+              schema:
+                $ref: "#/components/schemas/reportContentJson"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+            application/vnd.sas.report.content+xml:
+              schema:
+                $ref: "#/components/schemas/reportContentXml"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+        "304":
+          $ref: "#/components/responses/Redirect304"
+        "404":
+          description: Report or report content does not exist.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  $ref: "#/components/examples/ReportContentNotFound"
+    put:
+      summary: Save report content
+      description: Saves the report content. Does not return the stored content. An `ETag` is not required for the initial save, but is required for all subsequent saves. In some situations, where an Accept type header is automatically generated, setting it to '\*/\*' will achieve the same effect as omitting it. See [`Conditional Operations`](https://developer.sas.com/rest-apis/reports-v7/docs/getting-started/usage-notes#conditional-operations).
+      operationId: updateContent
+      tags:
+        - ReportContent
+      parameters:
+        - $ref: "#/components/parameters/ReportId"
+        - $ref: "#/components/parameters/IfMatch"
+        - $ref: "#/components/parameters/IfUnmodifiedSince"
+        - name: copyDependentFiles
+          in: query
+          required: false
+          description: The flag to create copy of all dependent file resources.
+          schema:
+            type: boolean
+      requestBody:
+        $ref: "#/components/requestBodies/AllFormat"
+      responses:
+        "204":
+          description: The report content was stored.
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Last-Modified:
+              $ref: "#/components/headers/Last-Modified"
+        "400":
+          description: The input report content was not valid.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+        "404":
+          description: The report or report content does not exist.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  $ref: "#/components/examples/ReportContentNotFound"
+        "412":
+          description: The `If-Match` or `If-Unmodified-Since` header did not match the current version of the resource.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  $ref: "#/components/examples/ReportContentETagNotMatched"
+        "428":
+          description: The `If-Match` or `If-Unmodified-Since` was not provided when updating the report content.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  $ref: "#/components/examples/ReportContentETagMissing"
+  "/reports/{reportId}/content#updateContentWithReturn":
+    put:
+      summary: Save and return report content
+      description: An `ETag` is not required for the initial save, but is required for all subsequent saves. See [`Conditional Operations`](https://developer.sas.com/rest-apis/reports-v7/docs/getting-started/usage-notes#conditional-operations). A different response code is returned depending on whether the request is for the initial save or a subsequent save.
+      operationId: updateContentWithReturn
+      tags:
+        - ReportContent
+      parameters:
+        - $ref: "#/components/parameters/ReportId"
+        - $ref: "#/components/parameters/IfMatch"
+        - $ref: "#/components/parameters/IfUnmodifiedSince"
+        - name: copyDependentFiles
+          in: query
+          required: false
+          description: The flag to create copy of all dependent file resources.
+          schema:
+            type: boolean
+      requestBody:
+        $ref: "#/components/requestBodies/AllFormat"
+      responses:
+        "200":
+          description: The report content was updated.
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Last-Modified:
+              $ref: "#/components/headers/Last-Modified"
+          content:
+            application/vnd.sas.report.content+json:
+              schema:
+                $ref: "#/components/schemas/reportContentJson"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+            application/vnd.sas.report.content+xml:
+              schema:
+                $ref: "#/components/schemas/reportContentXml"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+        "201":
+          description: The report content was created.
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Last-Modified:
+              $ref: "#/components/headers/Last-Modified"
+          content:
+            application/vnd.sas.report.content+json:
+              schema:
+                $ref: "#/components/schemas/reportContentJson"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+            application/vnd.sas.report.content+xml:
+              schema:
+                $ref: "#/components/schemas/reportContentXml"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+        "400":
+          description: Report does not exist.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  $ref: "#/components/examples/BadReportContent"
+        "404":
+          description: Report or report content does not exist.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  $ref: "#/components/examples/ReportContentNotFound"
+        "412":
+          description: The `If-Match` or `If-Unmodified-Since` header did not match the current version of the object.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  $ref: "#/components/examples/ReportContentETagNotMatched"
+        "428":
+          description: The `If-Match` or `If-Unmodified-Since` was not provided when updating the report.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  $ref: "#/components/examples/ReportContentETagMissing"
+  "/reports/{reportId}/content/version":
+    head:
+      summary: Check persisted report content version
+      description: Returns whether the persisted report content version exists
+      operationId: headersForGetContentVersion
+      tags:
+        - ReportContent
+      parameters:
+        - $ref: "#/components/parameters/ReportId"
+      responses:
+        "200":
+          description: The persisted report content version exists.
+        "404":
+          description: Report, report content does not exist, or, the content version cannot be determined.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  $ref: "#/components/examples/ReportContentNotFound"
+    get:
+      summary: Get persisted report content version
+      description: Returns the persisted report content version.
+      operationId: getContentVersion
+      tags:
+        - ReportContent
+      parameters:
+        - $ref: "#/components/parameters/ReportId"
+      responses:
+        "200":
+          description: The persisted report content version.
+          content:
+            application/vnd.sas.report.version+json:
+              schema:
+                $ref: "#/components/schemas/reportVersion"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+            application/json:
+              schema:
+                $ref: "#/components/schemas/reportVersion"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+        "404":
+          description: Report, report content does not exist, or, the content version cannot be determined.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  $ref: "#/components/examples/ReportContentNotFound"
+  "/reports/{reportId}/content/validation#validatePersistedContent":
+    post:
+      summary: Validate the persisted report content schema
+      description: Validates the report content against a schema. The schema specified in the report content is used for validation.
+      operationId: createPersistedContentValidation
+      tags:
+        - ReportContent
+      parameters:
+        - $ref: "#/components/parameters/ReportId"
+      responses:
+        "200":
+          description: Report content is valid.
+          content:
+            application/vnd.sas.report.content.validation+json:
+              schema:
+                $ref: "#/components/schemas/reportContentValidation"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+            application/json:
+              schema:
+                $ref: "#/components/schemas/reportContentValidation"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+        "404":
+          description: Report or report content does not exist.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  summary: Not found error
+                  value:
+                    errorCode: 0
+                    message: "An error occurred. The resource could not be found. Identifier: 5559a118-139b-46e4-adea-97198d9068f5."
+                    details:
+                      - "traceId: 1e2ce9a76a5e0a14"
+                      - "path: /reports/reports/5559a118-139b-46e4-adea-97198d9068f5/content/validation"
+                    version: 2
+                    httpStatusCode: 404
+  /versions:
+    get:
+      summary: Get available versions of report content
+      description: Return all available versions of report content.
+      operationId: getReportContentVersions
+      tags:
+        - ReportContent
+      parameters:
+        - $ref: "#/components/parameters/Start"
+        - $ref: "#/components/parameters/Limit"
+        - name: filter
+          in: query
+          description: The criteria for filtering. Report version attributes that can be used are `schema`, `mediaType`, and `version`. See [Filtering in REST APIs](https://developer.sas.com/rest-apis/reports-v7/docs/getting-started/usage-notes#filtering).
+          required: false
+          schema:
+            type: string
+            format: filter-criteria
+        - name: sortBy
+          in: query
+          description: The criteria for sorting. Report version attributes that can be used are `schema`, `mediaType`, and `version`. See [Sorting in REST APIs](https://developer.sas.com/rest-apis/reports-v7/docs/getting-started/usage-notes#sorting).
+          required: false
+          schema:
+            type: string
+            format: sort-criteria
+      responses:
+        "200":
+          description: The report versions collection.
+          content:
+            application/vnd.sas.collection+json:
+              schema:
+                $ref: "#/components/schemas/reportVersionCollection"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+            application/json:
+              schema:
+                $ref: "#/components/schemas/reportVersionCollection"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+  /versions/@defaultVersion:
+    get:
+      summary: Get the default version of report content
+      description: Return the current default versions of report content.
+      operationId: getDefaultReportContentVersion
+      tags:
+        - ReportContent
+      responses:
+        "200":
+          description: The default report content version.
+          content:
+            application/vnd.sas.report.version+json:
+              schema:
+                $ref: "#/components/schemas/reportVersion"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+            application/json:
+              schema:
+                $ref: "#/components/schemas/reportVersion"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+  "/versions/{semanticVersion}":
+    get:
+      summary: Get the report content version for the given semantic version
+      description: Return the report content version for the given semantic version.
+      operationId: getReportContentVersion
+      tags:
+        - ReportContent
+      parameters:
+        - name: semanticVersion
+          in: path
+          description: The version in the format of major.minor.patch.
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The report content version.
+          content:
+            application/vnd.sas.report.version+json:
+              schema:
+                $ref: "#/components/schemas/reportVersion"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+            application/json:
+              schema:
+                $ref: "#/components/schemas/reportVersion"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+        "404":
+          description: Invalid major, minor, patch of report content version.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  summary: Invalid semantic version
+                  value:
+                    errorCode: 0
+                    message: Invalid version '99.99.99' is queried.
+                    details:
+                      - "traceId: 5da047bb467bc8b5"
+                      - "path: /reports/versions/99.99.99"
+                    version: 2
+                    httpStatusCode: 404
+  /validations/name#validateName:
+    post:
+      summary: Validate report name
+      description: Ensures that the name does not exceed the maximum length and, if `parentFolderUri` is provided, that a report with the name can be added as a member without conflict. The validation does not check whether or not the user can actually add a report with the given name to the folder.
+      operationId: createNameValidation
+      tags:
+        - Report
+      parameters:
+        - name: value
+          in: query
+          description: The report name in url-encoded format.
+          required: true
+          schema:
+            type: string
+        - $ref: "#/components/parameters/ParentFolderUri"
+      responses:
+        "204":
+          description: The report name is valid.
+        "400":
+          description: The report name exceeds the maximum allowed length.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  summary: Invalid report name error
+                  value:
+                    errorCode: 10714
+                    message: "The given report name exceeds the maximum 100 characters: abc......................."
+                    details:
+                      - "traceId: 211434df45ab0dfd"
+                      - "path: /reports/validations/name"
+                    version: 2
+                    httpStatusCode: 400
+        "404":
+          description: The folder does not exist.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  summary: Folder not found error
+                  value:
+                    errorCode: 10715
+                    message: The folder with 'validateNewMemberName' link as specified by the URI cannot be found.
+                    details:
+                      - "traceId: b155b43f6db843ed"
+                      - "path: /reports/validations/name"
+                    version: 2
+                    httpStatusCode: 404
+        "409":
+          description: A report with the same name is already a member of the folder.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  summary: Conflict error
+                  value:
+                    errorCode: 1177
+                    message: An error occurred. The report 'ABC' could not be added to the folder.
+                    details:
+                      - "traceId: 584b0d18b140b777"
+                      - "path: /reports/validations/name"
+                    version: 2
+                    httpStatusCode: 409
+  "/reports/{reportId}/content/elements":
+    head:
+      summary: Check report content elements status
+      description: Returns the headers for a report content elements, including `ETag`. See [`Conditional Operations`](https://developer.sas.com/rest-apis/reports-v7/docs/getting-started/usage-notes#conditional-operations).
+      operationId: headersForGetContentElements
+      tags:
+        - ReportContent
+      parameters:
+        - $ref: "#/components/parameters/ReportId"
+        - $ref: "#/components/parameters/Characteristics"
+        - $ref: "#/components/parameters/AcceptLanguage"
+        - name: Accept-Item
+          description: Optional header.  If omitted, items of `application/vnd.sas.report.content.element+json` type are returned.
+          in: header
+          required: false
+          schema:
+            type: string
+            enum:
+              - application/vnd.sas.report.content.element+json
+              - application/vnd.sas.report.content.element+json;version=1
+              - application/vnd.sas.report.content.element+json;version=2
+            default: application/vnd.sas.report.content.element+json;version=2
+      responses:
+        "200":
+          description: Check status operation was successful.
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Language:
+              $ref: "#/components/headers/Content-Language"
+            Last-Modified:
+              $ref: "#/components/headers/Last-Modified"
+        "404":
+          description: The report or report content does not exist.
+    get:
+      summary: Get report content elements
+      description: Returns the collection of elements.
+      operationId: getContentElements
+      tags:
+        - ReportContent
+      parameters:
+        - $ref: "#/components/parameters/ReportId"
+        - $ref: "#/components/parameters/Characteristics"
+        - $ref: "#/components/parameters/AcceptLanguage"
+        - name: Accept-Item
+          description: Optional header. If omitted, items of `application/vnd.sas.report.content.element+json` type are returned.
+          in: header
+          required: false
+          schema:
+            type: string
+            enum:
+              - application/vnd.sas.report.content.element+json
+              - application/vnd.sas.report.content.element+json;version=1
+              - application/vnd.sas.report.content.element+json;version=2
+            default: application/vnd.sas.report.content.element+json;version=2
+      responses:
+        "200":
+          description: A collection of report content elements.  Paging and sorting are not supported.
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Language:
+              $ref: "#/components/headers/Content-Language"
+            Last-Modified:
+              $ref: "#/components/headers/Last-Modified"
+          content:
+            application/vnd.sas.collection+json:
+              schema:
+                $ref: "#/components/schemas/reportContentElementsCollection"
+            application/json:
+              schema:
+                $ref: "#/components/schemas/reportContentElementsCollection"
+        "404":
+          description: The report or report content does not exist.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  summary: Not found error
+                  value:
+                    errorCode: 0
+                    message: "An error occurred. The resource could not be found. Identifier: 5559a118-139b-46e4-adea-97198d9068f5."
+                    details:
+                      - "traceId: 1e2ce9a76a5e0a14"
+                      - "path: /reports/reports/5559a118-139b-46e4-adea-97198d9068f5/content/elements"
+                    version: 2
+                    httpStatusCode: 404
+  "/reports/{reportId}/states":
+    head:
+      summary: Check a collection of report states
+      description: Returns the headers for a collection of report states of the current user associated with a report with standard paging, filtering, and sorting options.
+      operationId: headersForGetReportStates
+      tags:
+        - ReportState
+      parameters:
+        - $ref: "#/components/parameters/ReportId"
+        - $ref: "#/components/parameters/AcceptLanguage"
+        - $ref: "#/components/parameters/Start"
+        - $ref: "#/components/parameters/Limit"
+        - name: filter
+          in: query
+          description: The criteria for filtering the items. Report state attributes that can be used are `id`, `label`, `primary`, `createdBy`, `creationTimeStamp`, `modifiedBy`, and `modifiedTimeStamp`. See [Filtering in REST APIs](https://developer.sas.com/rest-apis/reports-v7/docs/getting-started/usage-notes#filtering).
+          required: false
+          schema:
+            type: string
+            format: filter-criteria
+        - name: sortBy
+          in: query
+          description: The criteria for sorting the items. Report attributes that can be used are `id`, `label`, `primary`, `createdBy`, `creationTimeStamp`, `modifiedBy`, and `modifiedTimeStamp`. See [Sorting in REST APIs](https://developer.sas.com/rest-apis/reports-v7/docs/getting-started/usage-notes#sorting).
+          required: false
+          schema:
+            type: string
+            format: sort-criteria
+      responses:
+        "200":
+          description: Check the report states in standard report state format.
+        "400":
+          description: Bad Request.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  summary: Bad request error
+                  value:
+                    errorCode": 0
+                    message: An error occurred.
+                    details:
+                      - "traceId: 03b5f0c710eca2d6"
+                      - "path: /reports/reports/8559a118-139b-46e4-adea-97198d9068f5/states"
+                    version: 2
+                    httpStatusCode: 400
+    get:
+      summary: Get a collection of report states
+      description: Returns a collection of report states of the current user associated with a report with standard paging, filtering, and sorting options.
+      operationId: getReportStates
+      tags:
+        - ReportState
+      parameters:
+        - $ref: "#/components/parameters/ReportId"
+        - $ref: "#/components/parameters/AcceptLanguage"
+        - $ref: "#/components/parameters/Start"
+        - $ref: "#/components/parameters/Limit"
+        - name: filter
+          in: query
+          description: The criteria for filtering the items. Report state attributes that can be used are `id`, `label`, `primary`, `createdBy`, `creationTimeStamp`, `modifiedBy`, and `modifiedTimeStamp`. See [Filtering in REST APIs](https://developer.sas.com/rest-apis/reports-v7/docs/getting-started/usage-notes#filtering).
+          required: false
+          schema:
+            type: string
+            format: filter-criteria
+        - name: sortBy
+          in: query
+          description: The criteria for sorting the items. Report attributes that can be used are `id`, `label`, `primary`, `createdBy`, `creationTimeStamp`, `modifiedBy`, and `modifiedTimeStamp`. See [Sorting in REST APIs](https://developer.sas.com/rest-apis/reports-v7/docs/getting-started/usage-notes#sorting).
+          required: false
+          schema:
+            type: string
+            format: sort-criteria
+      responses:
+        "200":
+          description: The report states in standard report state format.
+          content:
+            application/vnd.sas.collection+json:
+              schema:
+                $ref: "#/components/schemas/reportStateCollection"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+            application/json:
+              schema:
+                $ref: "#/components/schemas/reportStateCollection"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+        "400":
+          description: Bad Request.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  summary: Bad request error
+                  value:
+                    errorCode": 0
+                    message: An error occurred.
+                    details:
+                      - "traceId: 03b5f0c710eca2d6"
+                      - "path: /reports/reports/8559a118-139b-46e4-adea-97198d9068f5/states"
+                    version: 2
+                    httpStatusCode: 400
+    post:
+      summary: Create report state
+      description: Creates a new report state.
+      operationId: createReportState
+      tags:
+        - ReportState
+      parameters:
+        - $ref: "#/components/parameters/ReportId"
+      requestBody:
+        content:
+          application/vnd.sas.report.state.info+json:
+            schema:
+              $ref: "#/components/schemas/newReportState"
+            examples:
+              ReportCreated:
+                $ref: "#/components/examples/ReportCreated"
+          application/json:
+            schema:
+              $ref: "#/components/schemas/newReportState"
+            examples:
+              ReportCreated:
+                $ref: "#/components/examples/ReportCreated"
+        description: Report state to create. A full report state can be included, but only the label and primary attributes are used to create the new report state.
+        required: true
+      responses:
+        "201":
+          description: New report state created.  ETag header is returned. See [`Conditional Operations`](https://developer.sas.com/rest-apis/reports-v7/docs/getting-started/usage-notes#conditional-operations).
+          headers:
+            Location:
+              $ref: "#/components/headers/Location"
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Last-Modified:
+              $ref: "#/components/headers/Last-Modified"
+          content:
+            application/vnd.sas.report.state.info+json:
+              schema:
+                $ref: "#/components/schemas/reportState"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+            application/json:
+              schema:
+                $ref: "#/components/schemas/reportState"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+        "400":
+          description: Bad Request.  The input report state was not valid.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  summary: Bad request error
+                  value:
+                    errorCode": 0
+                    message: An error occurred.
+                    details:
+                      - "traceId: 03b5f0c710eca2d6"
+                      - "path: /reports/reports/8559a118-139b-46e4-adea-97198d9068f5/states"
+                    version: 2
+                    httpStatusCode: 400
+        "404":
+          description: Report does not exist.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  summary: Not found error
+                  value:
+                    errorCode: 0
+                    message: "An error occurred. The resource could not be found. Identifier: 5559a118-139b-46e4-adea-97198d9068f5."
+                    details:
+                      - "traceId: 1e2ce9a76a5e0a14"
+                      - "path: /reports/reports/8559a118-139b-46e4-adea-97198d9068f5"
+                    version: 2
+                    httpStatusCode: 404
+  "/reports/{reportId}/states/{stateId}":
+    head:
+      summary: Check report state status
+      description: Returns the headers for a report state, including `ETag`.  `stateId` can also be a special string '@currentUserState' which is the report state id of the current user.
+      operationId: headersForGetReportState
+      tags:
+        - ReportState
+      parameters:
+        - $ref: "#/components/parameters/ReportId"
+        - $ref: "#/components/parameters/ReportStateId"
+      responses:
+        "200":
+          description: Check status was successful.
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Last-Modified:
+              $ref: "#/components/headers/Last-Modified"
+        "404":
+          description: Report or report state does not exist.
+    get:
+      summary: Get report state
+      description: Returns the specified report state, including ETag header.  See [`Conditional Operations`](https://developer.sas.com/rest-apis/reports-v7/docs/getting-started/usage-notes#conditional-operations). `stateId` can also be a special string '@currentUserState' which is the report state id of the current user.
+      operationId: getReportState
+      tags:
+        - ReportState
+      parameters:
+        - name: reportId
+          in: path
+          description: Identifier of the report.
+          required: true
+          schema:
+            type: string
+            format: object-id
+        - name: stateId
+          in: path
+          description: Report state id to get.
+          required: true
+          schema:
+            type: string
+            format: object-id
+      responses:
+        "200":
+          description: Returns the report state. ETag header is included.
+          headers:
+            ETag:
+              description: A tag that identifies this revision of the object.
+              schema:
+                type: string
+            Last-Modified:
+              description: The last modified timestamp of the object.
+              schema:
+                type: string
+          content:
+            application/vnd.sas.report.state.info+json:
+              schema:
+                $ref: "#/components/schemas/reportState"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+            application/json:
+              schema:
+                $ref: "#/components/schemas/reportState"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+        "404":
+          description: Report or report state does not exist.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  summary: Not found error
+                  value:
+                    errorCode: 0
+                    message: "An error occurred. The resource could not be found. Identifier: 412f6f71-64eb-4840-a6a5-9a8e18fcad74."
+                    details:
+                      - "traceId: 1e2ce9a76a5e0a14"
+                      - "path: /reports/reports/8559a118-139b-46e4-adea-97198d9068f5/states/412f6f71-64eb-4840-a6a5-9a8e18fcad74"
+                    version: 2
+                    httpStatusCode: 404
+    delete:
+      summary: Delete report state
+      description: Deletes the specified report state.
+      operationId: deleteReportState
+      tags:
+        - ReportState
+      parameters:
+        - $ref: "#/components/parameters/ReportId"
+        - $ref: "#/components/parameters/ReportStateId"
+      responses:
+        "204":
+          description: Report state was deleted.
+        "404":
+          description: Report or report state does not exist.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  summary: Not found error
+                  value:
+                    errorCode: 0
+                    message: "An error occurred. The resource could not be found. Identifier: 412f6f71-64eb-4840-a6a5-9a8e18fcad74."
+                    details:
+                      - "traceId: 1e2ce9a76a5e0a14"
+                      - "path: /reports/reports/8559a118-139b-46e4-adea-97198d9068f5/states/412f6f71-64eb-4840-a6a5-9a8e18fcad74"
+                    version: 2
+                    httpStatusCode: 404
+    put:
+      summary: Update report state
+      description: Updates the specified report state.  Either an `If-Match` or `If-Unmodified-Since` request header is required.  See [`Conditional Operations`](https://developer.sas.com/rest-apis/reports-v7/docs/getting-started/usage-notes#conditional-operations).
+      operationId: updateReportState
+      tags:
+        - ReportState
+      parameters:
+        - $ref: "#/components/parameters/ReportId"
+        - $ref: "#/components/parameters/ReportStateId"
+        - $ref: "#/components/parameters/IfMatch"
+        - $ref: "#/components/parameters/IfUnmodifiedSince"
+      requestBody:
+        content:
+          application/vnd.sas.report.state.info+json:
+            schema:
+              $ref: "#/components/schemas/updateReportState"
+            examples:
+              ReportCreated:
+                $ref: "#/components/examples/ReportCreated"
+          application/json:
+            schema:
+              $ref: "#/components/schemas/updateReportState"
+            examples:
+              ReportCreated:
+                $ref: "#/components/examples/ReportCreated"
+        description: Report state to update. A full report state can be included, but only the label and primary are used to update the report state.
+        required: true
+      responses:
+        "200":
+          description: Report state was updated.
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Last-Modified:
+              $ref: "#/components/headers/Last-Modified"
+          content:
+            application/vnd.sas.report.state.info+json:
+              schema:
+                $ref: "#/components/schemas/reportState"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+            application/json:
+              schema:
+                $ref: "#/components/schemas/reportState"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+        "400":
+          description: Bad Request. The input report state was not valid.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  summary: Bad request error
+                  value:
+                    errorCode": 0
+                    message: An error occurred.
+                    details:
+                      - "traceId: 03b5f0c710eca2d6"
+                      - "path: /reports/reports/8559a118-139b-46e4-adea-97198d9068f5/states/412f6f71-64eb-4840-a6a5-9a8e18fcad74"
+                    version: 2
+                    httpStatusCode: 400
+        "403":
+          description: Report or report state does not exist or the report state belongs to another user.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  summary: Unauthorized error
+                  value:
+                    errorCode": 0
+                    message: An error occurred. The user does not have permission to access the resouirce.
+                    details:
+                      - "traceId: 03b5f0c710eca2d6"
+                      - "path: /reports/reports/8559a118-139b-46e4-adea-97198d9068f5/states/412f6f71-64eb-4840-a6a5-9a8e18fcad74"
+                    version: 2
+                    httpStatusCode: 403
+        "412":
+          description: The ETag (If-Match) provided did not match the current version of the object, or the last modified date did not match.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  $ref: "#/components/examples/ReportStateETagNotMatched"
+        "428":
+          description: The ETag (If-Match), or the last modified date was not provided when updating the report state.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  $ref: "#/components/examples/ReportStateETagMissing"
+  "/reports/{reportId}/states/{stateId}/content":
+    head:
+      summary: Check report state content status
+      description: Returns the headers for a report state content, including `ETag`.  See [`Conditional Operations`](https://developer.sas.com/rest-apis/reports-v7/docs/getting-started/usage-notes#conditional-operations).
+      operationId: headersForGetReportStateContent
+      tags:
+        - ReportStateContent
+      parameters:
+        - $ref: "#/components/parameters/ReportId"
+        - $ref: "#/components/parameters/ReportStateId"
+        - $ref: "#/components/parameters/AcceptLanguage"
+        - $ref: "#/components/parameters/IfNoneMatch"
+        - $ref: "#/components/parameters/IfModifiedSince"
+      responses:
+        "200":
+          description: Check status operation was successful.
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Last-Modified:
+              $ref: "#/components/headers/Last-Modified"
+            Content-Language:
+              $ref: "#/components/headers/Content-Language"
+        "304":
+          description: The caller has the most current object.
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Last-Modified:
+              $ref: "#/components/headers/Last-Modified"
+        "404":
+          description: Report, report state or their content does not exist.
+    get:
+      summary: Get report state content
+      description: Returns the report state content, including `ETag`.  See [`Conditional Operations`](https://developer.sas.com/rest-apis/reports-v7/docs/getting-started/usage-notes#conditional-operations).
+      operationId: getReportStateContent
+      tags:
+        - ReportStateContent
+      parameters:
+        - $ref: "#/components/parameters/ReportId"
+        - $ref: "#/components/parameters/ReportStateId"
+        - $ref: "#/components/parameters/AcceptLanguage"
+        - $ref: "#/components/parameters/IfNoneMatch"
+        - $ref: "#/components/parameters/IfModifiedSince"
+      responses:
+        "200":
+          description: Report state content.
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Last-Modified:
+              $ref: "#/components/headers/Last-Modified"
+            Content-Language:
+              $ref: "#/components/headers/Content-Language"
+          content:
+            application/vnd.sas.report.content+json:
+              schema:
+                $ref: "#/components/schemas/reportStateContentJson"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+            application/vnd.sas.report.content+xml:
+              schema:
+                $ref: "#/components/schemas/reportStateContentXml"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+        "304":
+          $ref: "#/components/responses/Redirect304"
+        "404":
+          description: Report, report state, or their content does not exist.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  summary: Not found error
+                  value:
+                    errorCode: 0
+                    message: "An error occurred. The resource could not be found. Identifier: 8559a118-139b-46e4-adea-97198d9068f5."
+                    details:
+                      - "traceId: 1e2ce9a76a5e0a14"
+                      - "path: /reports/reports/8559a118-139b-46e4-adea-97198d9068f5/states/412f6f71-64eb-4840-a6a5-9a8e18fcad74/content"
+                    version: 2
+                    httpStatusCode: 404
+    put:
+      summary: Save report state content
+      description: Saves the report state content. Does not return the stored state content. An `ETag` is not required for the initial save, but is required for all subsequent saves. In some situations where `Accept` type header is automatically generated, setting it to '\*/\*' will achieve the same effect as not including it. See [`Conditional Operations`](https://developer.sas.com/rest-apis/reports-v7/docs/getting-started/usage-notes#conditional-operations).
+      operationId: updateReportStateContent
+      tags:
+        - ReportStateContent
+      parameters:
+        - $ref: "#/components/parameters/ReportId"
+        - $ref: "#/components/parameters/ReportStateId"
+        - $ref: "#/components/parameters/IfMatch"
+        - $ref: "#/components/parameters/IfUnmodifiedSince"
+      requestBody:
+        $ref: "#/components/requestBodies/ReportStateAllFormat"
+      responses:
+        "204":
+          description: Report state content was stored.
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Last-Modified:
+              $ref: "#/components/headers/Last-Modified"
+        "400":
+          description: Bad Request. The input report state content was not valid.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  summary: Bad request error
+                  value:
+                    errorCode": 0
+                    message: An error occurred.
+                    details:
+                      - "traceId: 03b5f0c710eca2d6"
+                      - "path: /reports/reports/8559a118-139b-46e4-adea-97198d9068f5/states/412f6f71-64eb-4840-a6a5-9a8e18fcad74/content"
+                    version: 2
+                    httpStatusCode: 400
+        "404":
+          description: Report state or report state content does not exist.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  summary: Not found error
+                  value:
+                    errorCode: 0
+                    message: "An error occurred. The resource could not be found. Identifier: 8559a118-139b-46e4-adea-97198d9068f5."
+                    details:
+                      - "traceId: 1e2ce9a76a5e0a14"
+                      - "path: /reports/reports/8559a118-139b-46e4-adea-97198d9068f5/states/412f6f71-64eb-4840-a6a5-9a8e18fcad74/content"
+                    version: 2
+                    httpStatusCode: 404
+        "412":
+          description: The ETag (If-Match) provided did not match the current version of the object, or the last modified date did not match.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  $ref: "#/components/examples/ReportStateETagNotMatched"
+        "428":
+          description: The ETag (If-Match), or the last modified date was not provided when updating the report state content.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  $ref: "#/components/examples/ReportStateETagMissing"
+  "/reports/{reportId}/states/{stateId}/content#updateReportStateContentWithReturn":
+    put:
+      summary: Store and return report state content
+      description: Saves and returns the report state content. An `ETag` is not required for the initial save, but required for all subsequent saves.  See [`Conditional Operations`](https://developer.sas.com/rest-apis/reports-v7/docs/getting-started/usage-notes#conditional-operations). A different response code is returned depending on whether the request is for the initial save or a subsequent save.
+      operationId: updateReportStateContentWithReturn
+      tags:
+        - ReportStateContent
+      parameters:
+        - $ref: "#/components/parameters/ReportId"
+        - $ref: "#/components/parameters/ReportStateId"
+        - $ref: "#/components/parameters/IfMatch"
+        - $ref: "#/components/parameters/IfUnmodifiedSince"
+      requestBody:
+        $ref: "#/components/requestBodies/ReportStateAllFormat"
+      responses:
+        "200":
+          description: The report state content was updated.
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Last-Modified:
+              $ref: "#/components/headers/Last-Modified"
+          content:
+            application/vnd.sas.report.content+json:
+              schema:
+                $ref: "#/components/schemas/reportStateContentJson"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+            application/vnd.sas.report.content+xml:
+              schema:
+                $ref: "#/components/schemas/reportStateContentXml"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+        "201":
+          description: Report state content was created.
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Last-Modified:
+              $ref: "#/components/headers/Last-Modified"
+          content:
+            application/vnd.sas.report.content+json:
+              schema:
+                $ref: "#/components/schemas/reportStateContentJson"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+            application/vnd.sas.report.content+xml:
+              schema:
+                $ref: "#/components/schemas/reportStateContentXml"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+        "400":
+          description: Bad Request. The input report state content was not valid.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  summary: Bad request error
+                  value:
+                    errorCode": 0
+                    message: An error occurred.
+                    details:
+                      - "traceId: 03b5f0c710eca2d6"
+                      - "path: /reports/reports/8559a118-139b-46e4-adea-97198d9068f5/states/412f6f71-64eb-4840-a6a5-9a8e18fcad74/content"
+                    version: 2
+                    httpStatusCode: 400
+        "404":
+          description: Report state or report state content does not exist.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  summary: Not found error
+                  value:
+                    errorCode: 0
+                    message: "An error occurred. The resource could not be found. Identifier: 8559a118-139b-46e4-adea-97198d9068f5."
+                    details:
+                      - "traceId: 1e2ce9a76a5e0a14"
+                      - "path: /reports/reports/8559a118-139b-46e4-adea-97198d9068f5/states/412f6f71-64eb-4840-a6a5-9a8e18fcad74/content"
+                    version: 2
+                    httpStatusCode: 404
+        "412":
+          description: The ETag (If-Match) provided did not match the current version of the object, or the last modified date did not match.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  $ref: "#/components/examples/ReportStateETagNotMatched"
+        "428":
+          description: The ETag (If-Match), or the last modified date was not provided when updating the report state content.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  $ref: "#/components/examples/ReportStateETagMissing"
+  /content#toJSON:
+    post:
+      summary: Convert content from XML to JSON
+      description: Returns the converted report content.
+      operationId: convertContentToJson
+      tags:
+        - ReportContent
+      requestBody:
+        description: The report content to be converted.
+        required: true
+        content:
+          application/vnd.sas.report.content+xml:
+            schema:
+              $ref: "#/components/schemas/reportContentXml"
+            examples:
+              ReportCreated:
+                $ref: "#/components/examples/ReportCreated"
+      responses:
+        "200":
+          description: Report content.
+          content:
+            application/vnd.sas.report.content+json:
+              schema:
+                $ref: "#/components/schemas/reportContentJson"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+        "400":
+          description: Bad Request. The input report content was not valid.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  summary: Bad request error
+                  value:
+                    errorCode": 0
+                    message: An error occurred.
+                    details:
+                      - "traceId: 03b5f0c710eca2d6"
+                      - "path: /reports/content"
+                    version: 2
+                    httpStatusCode: 400
+  /content#toXML:
+    post:
+      summary: Convert content from JSON to XML
+      description: Returns the converted report content.
+      operationId: convertContentToXml
+      tags:
+        - ReportContent
+      requestBody:
+        description: The report content to be converted.
+        required: true
+        content:
+          application/vnd.sas.report.content+json:
+            schema:
+              $ref: "#/components/schemas/reportContentJson"
+            examples:
+              ReportCreated:
+                $ref: "#/components/examples/ReportCreated"
+      responses:
+        "200":
+          description: Report content.
+          content:
+            application/vnd.sas.report.content+xml:
+              schema:
+                $ref: "#/components/schemas/reportContentXml"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+        "400":
+          description: Bad Request. The input report content was not valid.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                error:
+                  summary: Bad request error
+                  value:
+                    errorCode": 0
+                    message: An error occurred.
+                    details:
+                      - "traceId: 03b5f0c710eca2d6"
+                      - "path: /reports/content"
+                    version: 2
+                    httpStatusCode: 400
+  /content/validation#validateAnyContent:
+    post:
+      summary: Validate report content schema
+      description: Validates the report content against a schema. The schema specified in the report content is used for validation.
+      operationId: validateContent
+      tags:
+        - ReportContent
+      requestBody:
+        description: The report content to be converted.
+        required: true
+        content:
+          application/vnd.sas.report.content+json:
+            schema:
+              $ref: "#/components/schemas/reportContentJson"
+            examples:
+              ReportCreated:
+                $ref: "#/components/examples/ReportCreated"
+          application/vnd.sas.report.content+xml:
+            schema:
+              $ref: "#/components/schemas/reportContentXml"
+            examples:
+              ReportCreated:
+                $ref: "#/components/examples/ReportCreated"
+      responses:
+        "200":
+          description: Report content validation result.
+          content:
+            application/vnd.sas.report.content.validation+json:
+              schema:
+                $ref: "#/components/schemas/reportContentValidation"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+            application/vnd.sas.report.content.validation+json;version=1:
+              schema:
+                $ref: "#/components/schemas/reportContentValidation"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+            application/json:
+              schema:
+                $ref: "#/components/schemas/reportContentValidation"
+              examples:
+                ReportCreated:
+                  $ref: "#/components/examples/ReportCreated"
+components:
+  headers:
+    Location:
+      description: The URI of the newly created resource.
+      schema:
+        type: string
+    ETag:
+      description: A tag that identifies this revision of the resource.
+      schema:
+        type: string
+    Last-Modified:
+      description: The last `modifiedTimeStamp` of the resource.
+      schema:
+        type: string
+    Content-Language:
+      description: This header represents the locale of the result. It may not be present if there is issue during localization, in which case the result is what is persisted.
+      schema:
+        type: string
+  responses:
+    Redirect304:
+      description: The caller has the most current resource.
+      headers:
+        ETag:
+          $ref: "#/components/headers/ETag"
+        Last-Modified:
+          $ref: "#/components/headers/Last-Modified"
+  schemas:
+    reportApi:
+      title: API
+      description: The list of links to top-level resources and operations available from the root of the API.
+      x-sas-media-type:
+        name: application/vnd.sas.api
+        version: 1
+      allOf:
+        - $ref: "#/components/schemas/api"
+      example:
+        version: "1"
+        links:
+          - method: GET
+            rel: reports
+            href: /reports/reports
+            uri: /reports/reports
+            type: application/vnd.sas.collection
+            itemType: application/vnd.sas.summary+json
+          - method: POST
+            rel: createReport
+            href: /reports/reports
+            uri: /reports/reports
+            type: application/vnd.sas.report
+            responseType: application/vnd.sas.report
+          - method: POST
+            rel: validateName
+            href: /reports/validations/name
+            uri: /reports/validations/name
+          - method: POST
+            rel: validateContent
+            href: /reports/content/validation
+            uri: /reports/content/validation
+            type: application/vnd.sas.report.content
+            responseType: application/vnd.sas.report.content.validation
+    reportCollection:
+      title: Report Collection
+      description: A collection of reports.
+      x-sas-media-type:
+        name: application/vnd.sas.collection
+        version: 2
+      allOf:
+        - $ref: "#/components/schemas/baseCollection2"
+        - type: object
+          properties:
+            items:
+              type: array
+              description: The array of report representations.
+              items:
+                $ref: "#/components/schemas/report"
+    report:
+      title: Report
+      description: The representation of a report. This representation is version 1.  Optional `version=1` parameter is the only `version` parameter that can be included.
+      x-sas-media-type:
+        name: application/vnd.sas.report
+        version: 1
+      type: object
+      required:
+        - name
+      properties:
+        id:
+          type: string
+          format: object-id
+          description: unique identifier of the report
+          example: f8b66d4b-d67a-4e4e-a66d-b6f06b1820bf
+        name:
+          type: string
+          description: name of the report
+          example: Sample Report
+        description:
+          type: string
+          description: description of the report.
+          example: Description of a sample report.
+        creationTimeStamp:
+          type: string
+          format: date-time
+          description: date and time when the report was created
+        createdBy:
+          type: string
+          description: the user who created the report
+          example: user1
+        modifiedTimeStamp:
+          type: string
+          format: date-time
+          description: date and time when the report was modified
+        modifiedBy:
+          type: string
+          description: the user who modified the report
+          example: user1
+        links:
+          type: array
+          description: a set of links to related resources or operations
+          items:
+            $ref: "#/components/schemas/link"
+          example:
+            - method: GET
+              rel: self
+              href: /reports/reports/f8b66d4b-d67a-4e4e-a66d-b6f06b1820bf
+              uri: /reports/reports/f8b66d4b-d67a-4e4e-a66d-b6f06b1820bf
+              type: application/vnd.sas.report
+            - method: GET
+              rel: alternate
+              href: /reports/reports/f8b66d4b-d67a-4e4e-a66d-b6f06b1820bf
+              uri: /reports/reports/f8b66d4b-d67a-4e4e-a66d-b6f06b1820bf
+              type: application/vnd.sas.summary
+            - method: PUT
+              rel: update
+              href: /reports/reports/f8b66d4b-d67a-4e4e-a66d-b6f06b1820bf
+              uri: /reports/reports/f8b66d4b-d67a-4e4e-a66d-b6f06b1820bf
+              type: application/vnd.sas.report
+              responseType: application/vnd.sas.report
+            - method: PUT
+              rel: updateContent
+              href: /reports/reports/f8b66d4b-d67a-4e4e-a66d-b6f06b1820bf/content
+              uri: /reports/reports/f8b66d4b-d67a-4e4e-a66d-b6f06b1820bf/content
+              type: application/vnd.sas.report.content
+              responseType: application/vnd.sas.report.content
+        imageUris:
+          type: object
+          properties:
+            icon:
+              type: string
+          required:
+            - icon
+          additionalProperties:
+            type: string
+          example:
+            icon: /reports/icons/report.gif
+        version:
+          type: integer
+          description: media type's schema version number
+          example: 1
+    newReport:
+      title: New Report
+      description: The representation of a report. This representation is version 1.  Optional `version=1` parameter is the only one that can be included.
+      properties:
+        name:
+          type: string
+          description: The localizable report name.
+        description:
+          type: string
+          description: The localizable report description.
+      example:
+        name: TEST New Report
+        description: TEST New Description
+    reportSummary:
+      title: Resource Summary
+      description: The summarized representation of a resource. Often used in collection responses when more specific details aren't needed.
+      x-sas-media-type:
+        name: application/vnd.sas.summary
+        version: 1
+      allOf:
+        - $ref: "#/components/schemas/summary"
+      example:
+        id: f8b66d4b-d67a-4e4e-a66d-b6f06b1820bf
+        name: Sample Report
+        createdBy: user1
+        creationTimeStamp: 2020-12-09T13:22:11.394Z
+        modifiedBy: user1
+        modifiedTimeStamp: 2020-12-09T13:27:20.437Z
+        links:
+          - method: GET
+            rel: self
+            href: /reports/reports/f8b66d4b-d67a-4e4e-a66d-b6f06b1820bf
+            uri: /reports/reports/f8b66d4b-d67a-4e4e-a66d-b6f06b1820bf
+            type: application/vnd.sas.report
+          - method: GET
+            rel: alternate
+            href: /reports/reports/f8b66d4b-d67a-4e4e-a66d-b6f06b1820bf
+            uri: /reports/reports/f8b66d4b-d67a-4e4e-a66d-b6f06b1820bf
+            type: application/vnd.sas.summary
+          - method: DELETE
+            rel: delete
+            href: /reports/reports/f8b66d4b-d67a-4e4e-a66d-b6f06b1820bf
+            uri: /reports/reports/f8b66d4b-d67a-4e4e-a66d-b6f06b1820bf
+        type: report
+        iconUri: /reports/icons/report.gif
+        version: "1"
+    updateReport:
+      title: Update Report
+      description: The representation of a report. This representation is version 1.  Optional `version=1` parameter is the only one that can be included.
+      properties:
+        id:
+          type: string
+          format: object-id
+          description: Report id.
+        name:
+          type: string
+          description: The localizable report name.
+        description:
+          type: string
+          description: The localizable report description.
+      example:
+        id: 4eb3b675-e107-4857-a8f4-51aa555ac7e7
+        name: TEST Update Report
+        description: TEST New Description
+    reportContentJson:
+      title: Report Content JSON
+      description: The representation of a report content in JSON format. Check [`Get Versions`](#/ReportContent/getReportContentVersions) and [`GET /versions/@defaultVersion`](#/ReportContent/getDefaultReportContentVersion) for the set of valid media types and versions as defined by `Business Intelligence Report Definition`.  If not provided, for request the version equivalent to the report content schema is used and for response latest version is used.
+      x-sas-media-type:
+        name: application/vnd.sas.report.content
+        version: 1
+      type: object
+      example:
+        "@element": SASReport
+        xmlns: http://www.sas.com/sasreportmodel/bird-4.3.0
+        label: Small Report
+        dateCreated: 2020-10-24T01:33:24Z
+        dateModified: 2020-11-04T03:20:00Z
+        view:
+          "@element": View
+          sections:
+            - "@element": Section
+              name: vi1
+              label: Section1
+              body:
+                "@element": Body
+                mediaContainerList:
+                  - "@element": MediaContainer
+                    target: mt111
+                    layout:
+                      "@element": ResponsiveLayout
+              mediaSchemes:
+                - "@element": MediaScheme
+                  name: ms201
+              mediaTargets:
+                - "@element": MediaTarget
+                  name: mt111
+                  scheme": ms201
+    reportContentXml:
+      title: Report Content XML
+      description: The representation of a report content in XML format. Check [`Get Versions`](#/ReportContent/getReportContentVersions) and [`GET /versions/@defaultVersion`](#/ReportContent/getDefaultReportContentVersion) for the set of valid media types and versions as defined by `Business Intelligence Report Definition`.  If not provided, for request the version equivalent to the report content schema is used and for response latest version is used.<br> <i>The schema of this XML example is just for the example and therefore is only a very small subset of `Business Intelligence Report Definition`</i>
+      x-sas-media-type:
+        name: application/vnd.sas.report.content
+        version: 1
+      type: object
+      xml:
+        name: SASReport
+        namespace: http://www.sas.com/sasreportmodel/bird-4.3.0
+      properties:
+        label:
+          type: string
+          example: Small Report
+          xml:
+            attribute: true
+        dateCreated:
+          type: string
+          example: 2020-10-24T01:33:24Z
+          xml:
+            attribute: true
+        dateModified:
+          type: string
+          example: 2020-11-04T03:20:00Z
+          xml:
+            attribute: true
+        Results:
+          type: object
+        DataDefinitions:
+          type: object
+        VisualElements:
+          type: object
+        PromptDefinitions:
+          type: object
+        View:
+          type: object
+          properties:
+            Sections:
+              type: object
+              properties:
+                Section:
+                  type: object
+                  properties:
+                    name:
+                      xml:
+                        attribute: true
+                      example: vi1
+                    label:
+                      xml:
+                        attribute: true
+                      example: Section1
+                    Body:
+                      type: object
+                      properties:
+                        MediaContainer:
+                          type: object
+                          properties:
+                            target:
+                              xml:
+                                attribute: true
+                              example: mt111
+                            RelativeLayout:
+                              type: object
+        Interactions:
+          type: object
+        MediaDefinitionResource:
+          type: object
+          properties:
+            file:
+              xml:
+                attribute: true
+              example: /files/files/0499563b-9425-42ab-b6e2-d99804e54299
+        MediaSchemes:
+          type: object
+          properties:
+            MediaScheme:
+              type: object
+              properties:
+                name:
+                  xml:
+                    attribute: true
+                  example: ms201
+        MediaTargets:
+          type: object
+          properties:
+            MediaTarget:
+              type: object
+              properties:
+                name:
+                  xml:
+                    attribute: true
+                  example: mt111
+                scheme:
+                  xml:
+                    attribute: true
+                  example: ms201
+                definition:
+                  xml:
+                    attribute: true
+                  example: table-1280x768
+    reportVersionCollection:
+      title: Report Version Collection
+      description: A collection of report versions.
+      x-sas-media-type:
+        name: application/vnd.sas.collection
+        version: 2
+      allOf:
+        - $ref: "#/components/schemas/baseCollection2"
+        - type: object
+          properties:
+            items:
+              type: array
+              description: The array of report versions.
+              items:
+                $ref: "#/components/schemas/reportVersion"
+      example:
+        links:
+          - method: GET
+            rel: collection
+            href: /reports/versions
+            uri: /reports/versions
+            type: application/vnd.sas.collection
+          - method: GET
+            rel: self
+            href: /reports/versions?sortBy=name&start=0&limit=20
+            uri: /reports/versions?sortBy=name&start=0&limit=20
+            type: application/vnd.sas.collection
+        name: report-versions
+        accept: application/vnd.sas.report.version
+        start: "0"
+        count: "2"
+        items:
+          - schema: 4.0.2
+            mediaType: "1"
+            version: "1"
+          - schema: 4.4.0
+            mediaType: "9"
+            version: "1"
+        limit: "20"
+        version: "2"
+    reportVersion:
+      title: Report Version
+      description: The representation of a report version.
+      x-sas-media-type:
+        name: application/vnd.sas.report.version
+        version: 1
+      required:
+        - schema
+        - mediaType
+        - version
+      properties:
+        schema:
+          type: string
+          description: The major.minor.patch of this report version representation.
+          example: 4.3.0
+        mediaType:
+          type: integer
+          description: The media type version of the report version representation.
+          example: 8
+        version:
+          type: integer
+          description: The version number of the report version representation. This representation is version 1.
+          example: 1
+    reportContentValidation:
+      title: Report Content Validation
+      description: The representation of a report content validation.
+      x-sas-media-type:
+        name: application/vnd.sas.report.content.validation
+        version: 1
+      type: object
+      required:
+        - level
+        - schema
+      properties:
+        level:
+          type: string
+          description: The level of the report content validation.  Valid values are `schemaInvalid` and `schemaValid`.
+          example: schemaInvalid
+        schema:
+          type: string
+          description: The schema used for the report content validation.
+          example: bird-4.1.2.xsd
+        messages:
+          type: array
+          description: The messages generated for the report content validation.
+          items:
+            properties:
+              type:
+                type: string
+                description: The type of validation error. Valid values are `schemaFatal` and `schemaError`.
+              message:
+                type: string
+                description: The message of validation error.
+          example:
+            - type: schemaError
+              message: "Line 89: Value 'binder' is not facet-valid with respect to enumeration '[column, page]'. It must be a value from the enumeration."
+            - type: schemaError
+              message: "Line 89: The value 'binder' of attribute 'type' on element 'Axis' is not valid with respect to its type, 'relationalAxisTypeEnum'."
+        version:
+          type: integer
+          description: The version number of the report content validation representation. This representation is version 1.
+          example: 1
+    reportContentElementsCollection:
+      title: Report Content Elements Collection
+      description: A collection of report content elements.
+      x-sas-media-type:
+        name: application/vnd.sas.collection
+        version: 2
+      oneOf:
+        - allOf:
+            - $ref: "#/components/schemas/baseCollection2"
+            - type: object
+              properties:
+                items:
+                  type: array
+                  description: The array of report content element representations.
+                  items:
+                    $ref: "#/components/schemas/reportContentElement"
+        - allOf:
+            - $ref: "#/components/schemas/baseCollection2"
+            - type: object
+              properties:
+                items:
+                  type: array
+                  description: The array of report content element representations.
+                  items:
+                    $ref: "#/components/schemas/reportContentElement2"
+      example:
+        links:
+          - method: GET
+            rel: self
+            href: /reports/reports/8559a118-139b-46e4-adea-97198d9068f5/content/elements
+            uri: /reports/reports/8559a118-139b-46e4-adea-97198d9068f5/content/elements
+            type: application/vnd.sas.collection
+            itemType: application/vnd.sas.report.content.element
+          - method: GET
+            rel: up
+            href: /reports/reports/8559a118-139b-46e4-adea-97198d9068f5
+            uri: /reports/reports/8559a118-139b-46e4-adea-97198d9068f5
+            type: application/vnd.sas.report
+        name: reportContentElements
+        accept: application/vnd.sas.report.content.element
+        count: "3"
+        items:
+          - name: vi6
+            label: Migration Timeline
+            type: Section
+            version: 1
+          - name: vi357
+            label: EG Project Status
+            type: HiddenSection
+            version: 1
+          - name: ve27
+            label: Import details for EG projects
+            type: Table
+            version: 1
+        version: 2
+    reportState:
+      title: Report State
+      description: The representation of a report state.  This is version 1 of the representation.
+      x-sas-media-type:
+        name: application/vnd.sas.report.state.info
+        version: 1
+      required:
+        - label
+        - reportModifiedTimeStamp
+      properties:
+        id:
+          type: string
+          description: The string ID for the report state.
+        label:
+          type: string
+          description: The label for the report state.
+        userId:
+          type: string
+          description: The user ID associated with the report state.
+        primary:
+          type: boolean
+          description: The flag which indicates whether or not this report state is the one to be applied when the request does not explicitly specify the ID for a given user-report combination.
+        reportModifiedTimeStamp:
+          type: string
+          format: date-time
+          description: The time stamp of the associated report when the report state was created.
+        creationTimeStamp:
+          type: string
+          format: date-time
+          description: The time stamp when the report state was created.
+        createdBy:
+          type: string
+          description: The user ID who created the report state.
+        modifiedTimeStamp:
+          type: string
+          format: date-time
+          description: The time stamp when the report state properties was modified.
+        modifiedBy:
+          type: string
+          description: The user ID who modified the report state.
+        links:
+          type: array
+          description: The links that apply to the report state.
+          items:
+            $ref: "#/components/schemas/link"
+        version:
+          type: integer
+          description: The version number of the report state representation. This representation is version 1.
+      example:
+        id: 126b2b92-cfe1-4b2f-a1ca-dedc13a7a796
+        userId: user1
+        label: Primary
+        primary: true
+        reportModifiedTimeStamp: 2021-05-10T22:31:33.400Z
+        createdBy: user1
+        creationTimeStamp: 2021-05-13T15:01:28.708Z
+        modifiedBy: user5
+        modifiedTimeStamp: 2021-05-13T15:01:29.055Z
+        links:
+          - method: GET
+            rel: self
+            href: /reports/reports/8559a118-139b-46e4-adea-97198d9068f5/states/126b2b92-cfe1-4b2f-a1ca-dedc13a7a796
+            uri: /reports/reports/8559a118-139b-46e4-adea-97198d9068f5/states/126b2b92-cfe1-4b2f-a1ca-dedc13a7a796
+            type: application/vnd.sas.report.state.info
+          - method: PUT
+            rel: update
+            href: /reports/reports/8559a118-139b-46e4-adea-97198d9068f5/states/126b2b92-cfe1-4b2f-a1ca-dedc13a7a796
+            uri: /reports/reports/8559a118-139b-46e4-adea-97198d9068f5/states/126b2b92-cfe1-4b2f-a1ca-dedc13a7a796
+            type: application/vnd.sas.report.state.info
+            responseType: application/vnd.sas.report.state.info
+          - method: DELETE
+            rel: delete
+            href: /reports/reports/8559a118-139b-46e4-adea-97198d9068f5/states/126b2b92-cfe1-4b2f-a1ca-dedc13a7a796
+            uri: /reports/reports/8559a118-139b-46e4-adea-97198d9068f5/states/126b2b92-cfe1-4b2f-a1ca-dedc13a7a796
+          - method: GET
+            rel: content
+            href: /reports/reports/8559a118-139b-46e4-adea-97198d9068f5/states/126b2b92-cfe1-4b2f-a1ca-dedc13a7a796/content
+            uri: /reports/reports/8559a118-139b-46e4-adea-97198d9068f5/states/126b2b92-cfe1-4b2f-a1ca-dedc13a7a796/content
+            type: application/vnd.sas.report.content
+          - method: PUT
+            rel: updateContent
+            href: /reports/reports/8559a118-139b-46e4-adea-97198d9068f5/states/126b2b92-cfe1-4b2f-a1ca-dedc13a7a796/content
+            uri: /reports/reports/8559a118-139b-46e4-adea-97198d9068f5/states/126b2b92-cfe1-4b2f-a1ca-dedc13a7a796/content
+            type: application/vnd.sas.report.content
+            responseType: application/vnd.sas.report.content
+        version: 1
+    reportStateCollection:
+      title: Report State Collection
+      description: A collection of report states.
+      x-sas-media-type:
+        name: application/vnd.sas.collection
+        version: 2
+      allOf:
+        - $ref: "#/components/schemas/baseCollection2"
+        - type: object
+          properties:
+            items:
+              type: array
+              description: The array of report state representations.
+              items:
+                $ref: "#/components/schemas/reportState"
+      example:
+        links:
+          - method: GET
+            rel: collection
+            href: /reports/reports/8559a118-139b-46e4-adea-97198d9068f5/states
+            uri: /reports/reports/8559a118-139b-46e4-adea-97198d9068f5/states
+            type: application/vnd.sas.collection
+          - method: GET
+            rel: self
+            href: /reports/reports/8559a118-139b-46e4-adea-97198d9068f5/states?filter=and(eq(report.id,'8559a118-139b-46e4-adea-97198d9068f5'),eq(userId,'user1'))&sortBy=label&start=0&limit=20
+            uri: /reports/reports/8559a118-139b-46e4-adea-97198d9068f5/states?filter=and(eq(report.id,'8559a118-139b-46e4-adea-97198d9068f5'),eq(userId,'user1'))&sortBy=label&start=0&limit=20
+            type: application/vnd.sas.collection
+          - method: POST
+            rel: createReportState
+            href: /reports/reports/8559a118-139b-46e4-adea-97198d9068f5/states
+            uri: /reports/reports/8559a118-139b-46e4-adea-97198d9068f5/states
+            type: application/vnd.sas.report.state.info
+            responseType: application/vnd.sas.report.state.info
+        name: reportStates
+        accept: application/vnd.sas.report.state.info
+        count: "1"
+        items:
+          - id: cb237e1b-b11f-42fb-960c-a48a0c5b1688
+            label: 2020Timeline
+            userId: user1
+            primary: "true"
+            reportModifiedTimeStamp: 2018-03-02T19:33:41.124Z
+            creationTimeStamp: 2018-03-02T19:41:55.314Z
+            createdBy: user1
+            modifiedTimeStamp: 2018-03-02T19:41:55.314Z
+            modifiedBy: user5
+            links:
+              - method: GET
+                rel: self
+                href: /reports/reports/cb237e1b-b11f-42fb-960c-a48a0c5b1688/states/412f6f71-64eb-4840-a6a5-9a8e18fcad74
+                uri: /reports/reports/cb237e1b-b11f-42fb-960c-a48a0c5b1688/states/412f6f71-64eb-4840-a6a5-9a8e18fcad74
+                type: application/vnd.sas.report.state.info
+              - method: PUT
+                rel: update
+                href: /reports/reports/cb237e1b-b11f-42fb-960c-a48a0c5b1688/states/412f6f71-64eb-4840-a6a5-9a8e18fcad74
+                uri: /reports/reports/cb237e1b-b11f-42fb-960c-a48a0c5b1688/states/412f6f71-64eb-4840-a6a5-9a8e18fcad74
+                type: application/vnd.sas.report.state.info
+                responseType: application/vnd.sas.report.state.info
+              - method: DELETE
+                rel: delete
+                href: /reports/reports/cb237e1b-b11f-42fb-960c-a48a0c5b1688/states/412f6f71-64eb-4840-a6a5-9a8e18fcad74
+                uri: /reports/reports/cb237e1b-b11f-42fb-960c-a48a0c5b1688/states/412f6f71-64eb-4840-a6a5-9a8e18fcad74
+              - method: GET
+                rel: content
+                href: /reports/reports/cb237e1b-b11f-42fb-960c-a48a0c5b1688/states/412f6f71-64eb-4840-a6a5-9a8e18fcad74/content
+                uri: /reports/reports/cb237e1b-b11f-42fb-960c-a48a0c5b1688/states/412f6f71-64eb-4840-a6a5-9a8e18fcad74/content
+                type: application/vnd.sas.report.state
+              - method: PUT
+                rel: updateContent
+                href: /reports/reports/cb237e1b-b11f-42fb-960c-a48a0c5b1688/states/412f6f71-64eb-4840-a6a5-9a8e18fcad74/content
+                uri: /reports/reports/cb237e1b-b11f-42fb-960c-a48a0c5b1688/states/412f6f71-64eb-4840-a6a5-9a8e18fcad74/content
+                type: application/vnd.sas.report.state
+                responseType: application/vnd.sas.report.stat
+        version: "2"
+    newReportState:
+      title: New Report State
+      description: The representation of a new report state.
+      properties:
+        label:
+          type: string
+          description: The report state label.
+        primary:
+          type: boolean
+          description: A flag to indicate whether or not this report state is the one to apply when the request does not explicitly specify the ID for a given user-report combination.
+        reportModifiedTimeStamp:
+          type: string
+          format: date-time
+          description: The time stamp of the associated report when the report state was created.
+      example:
+        label: Test New Report State
+        primary: true
+        reportModifiedTimeStamp: 2018-03-02T19:33:41.124Z
+    updateReportState:
+      title: Update Report State
+      description: The representation of an updated report state.
+      properties:
+        id:
+          type: string
+          format: object-id
+          description: Report state id.
+        label:
+          type: string
+          description: The report state label.
+        primary:
+          type: boolean
+          description: The flag that indicates whether this report state is applied when the request does not specify the ID for a given user-report combination.
+        reportModifiedTimeStamp:
+          type: string
+          format: date-time
+          description: The time stamp of the associated report when the report state was created.
+      example:
+        id: 412f6f71-64eb-4840-a6a5-9a8e18fcad74
+        label: Test Updated Report State
+        primary: true
+        reportModifiedTimeStamp: 2018-03-02T19:33:41.124Z
+    reportStateContentJson:
+      title: Report Content JSON
+      description: The representation of a report state content, which has the same schema as report content, in JSON format. Check [`Get Versions`](#/ReportContent/getReportContentVersions) and [`GET /versions/@defaultVersion`](#/ReportContent/getDefaultReportContentVersion) for the set of valid media types and versions as defined by `Business Intelligence Report Definition`.  If not provided, for request the version equivalent to the report content schema is used and for response latest version is used.  The lowest valid version is 3.
+      x-sas-media-type:
+        name: application/vnd.sas.report.content
+        version: 1
+      type: object
+      example:
+        "@element": SASReport
+        xmlns: http://www.sas.com/sasreportmodel/bird-4.3.0
+        label: Small Report State
+        dateCreated: 2020-10-24T01:33:24Z
+        dateModified: 2020-11-04T03:20:00Z
+        view:
+          "@element": View
+          sections:
+            - "@element": Section
+              name: vi1
+              label: Section1
+              body:
+                "@element": Body
+                mediaContainerList:
+                  - "@element": MediaContainer
+                    target: mt111
+                    layout:
+                      "@element": ResponsiveLayout
+              mediaSchemes:
+                - "@element": MediaScheme
+                  name: ms201
+              mediaTargets:
+                - "@element": MediaTarget
+                  name: mt111
+                  scheme": ms201
+    reportStateContentXml:
+      title: Report State Content XML
+      description: The representation of a report state content, which has the same schema as report content, in XML format. Check [`Get Versions`](#/ReportContent/getReportContentVersions) and [`GET /versions/@defaultVersion`](#/ReportContent/getDefaultReportContentVersion) for the set of valid media types and versions as defined by `Business Intelligence Report Definition`.  If not provided, for request the version equivalent to the report content schema is used and for response latest version is used.  The lowest valid version is 3.<br> <i>The schema of this XML example is just for the example and therefore is only a very small subset of `Business Intelligence Report Definition`</i>
+      x-sas-media-type:
+        name: application/vnd.sas.report.content
+        version: 1
+      type: object
+      xml:
+        name: SASReport
+        namespace: http://www.sas.com/sasreportmodel/bird-4.3.0
+      properties:
+        label:
+          type: string
+          example: Small Report State
+          xml:
+            attribute: true
+        dateCreated:
+          type: string
+          example: 2020-10-24T01:33:24Z
+          xml:
+            attribute: true
+        dateModified:
+          type: string
+          example: 2020-11-04T03:20:00Z
+          xml:
+            attribute: true
+        Results:
+          type: object
+        DataDefinitions:
+          type: object
+        VisualElements:
+          type: object
+        PromptDefinitions:
+          type: object
+        View:
+          type: object
+          properties:
+            Sections:
+              type: object
+              properties:
+                Section:
+                  type: object
+                  properties:
+                    name:
+                      xml:
+                        attribute: true
+                      example: vi1
+                    label:
+                      xml:
+                        attribute: true
+                      example: Section1
+                    Body:
+                      type: object
+                      properties:
+                        MediaContainer:
+                          type: object
+                          properties:
+                            target:
+                              xml:
+                                attribute: true
+                              example: mt111
+                            RelativeLayout:
+                              type: object
+        Interactions:
+          type: object
+        MediaDefinitionResource:
+          type: object
+          properties:
+            file:
+              xml:
+                attribute: true
+              example: /files/files/0499563b-9425-42ab-b6e2-d99804e54299
+        MediaSchemes:
+          type: object
+          properties:
+            MediaScheme:
+              type: object
+              properties:
+                name:
+                  xml:
+                    attribute: true
+                  example: ms201
+        MediaTargets:
+          type: object
+          properties:
+            MediaTarget:
+              type: object
+              properties:
+                name:
+                  xml:
+                    attribute: true
+                  example: mt111
+                scheme:
+                  xml:
+                    attribute: true
+                  example: ms201
+                definition:
+                  xml:
+                    attribute: true
+                  example: table-1280x768
+    transferDependencies:
+      title: Transfer Dependencies
+      description: Content providers may use this media type and appropriate endpoint to provide dependency information to the transfer service.
+      x-sas-media-type:
+        name: application/vnd.sas.transfer.dependencies
+        version: 1
+      properties:
+        uri:
+          type: string
+          format: uri
+          description: The URI of the object whose dependencies are being provided.
+        version:
+          type: integer
+          description: This media type's schema version number. This representation is version 1.
+        name:
+          type: string
+          description: The name of the object whose dependencies are being provided.
+        dependentUris:
+          type: array
+          items:
+            type: string
+    baseCollection2:
+      title: Base Collection
+      description: This is a base schema used to define paginated collections of resources. This base schema is extended by other schemas in APIs by adding an 'items' array property. These extensions define the application/vnd.sas.collection media type (version 2)
+      properties:
+        name:
+          type: string
+          description: The name of the collection.
+        start:
+          type: integer
+          description: The zero-based index of the first item in the collection.
+          format: int64
+        limit:
+          type: integer
+          description: The number of items that were requested for the collection.
+        count:
+          type: integer
+          description: If populated indicates the number of items in the collection.
+          format: int64
+        accept:
+          type: string
+          description: A space-delimited list of media types from which an `Accept` header may be constructed.
+        links:
+          type: array
+          description: The links that apply to the collection.
+          items:
+            $ref: "#/components/schemas/link"
+        version:
+          type: integer
+          description: The version number of the collection representation. This representation is version 2.
+    summary:
+      title: Resource Summary
+      type: object
+      description: The summarized representation of a resource. Often used in collection responses when more specific details aren't needed.
+      x-sas-media-type:
+        name: application/vnd.sas.summary
+        version: 1
+      required:
+        - id
+        - links
+        - version
+      properties:
+        id:
+          type: string
+          description: The unique identifier for the resource.
+        name:
+          type: string
+          description: The name of the resource.
+        type:
+          type: string
+          description: The type of the resource.
+        description:
+          type: string
+          description: The description of the resource.
+        createdBy:
+          type: string
+          description: The user who created the resource.
+        creationTimeStamp:
+          type: string
+          format: date-time
+          description: The timestamp in YYYY-MM-DDThh:mm:ss.sssZ format when the resource was created.
+        modifiedBy:
+          type: string
+          description: The user who most recently modified the resource.
+        modifiedTimeStamp:
+          type: string
+          format: date-time
+          description: The timestamp in YYYY-MM-DDThh:mm:ss.sssZ format when the resource was last modified.
+        links:
+          type: array
+          description: The links that apply to the resource.
+          items:
+            $ref: "#/components/schemas/link"
+        version:
+          type: integer
+          description: The version number of the resource. This representation is version 1.
+    api:
+      title: API
+      description: The list of links to top-level resources and operations available from the root of the API.
+      x-sas-media-type:
+        name: application/vnd.sas.api
+        version: 1
+      required:
+        - version
+        - links
+      properties:
+        version:
+          type: integer
+          description: The version number of the API representation. This is version 1.
+          minimum: 1
+        links:
+          description: The API's top-level links.
+          type: array
+          items:
+            $ref: "#/components/schemas/link"
+    indexableData:
+      title: Indexable representation
+      description: Indxable representation of SAS type owner's data that searchindex service uses for indexing.
+      x-sas-media-type:
+        name: application/vnd.sas.search.indexable.data
+        version: 1
+      required:
+        - properties
+        - resourceUri
+        - sasType
+      properties:
+        version:
+          type: integer
+          description: The version number of Search Indexable data representation. This is version 1.
+        properties:
+          type: array
+          description: Set of attributes which needs to be indexed
+          items:
+            $ref: "#/components/schemas/nameValuePair"
+        resourceUri:
+          type: string
+          description: The object id of the content object.This is a mandatory field which typeowner needs to provide as this would be used to populate Primary key while indexing data.
+        sasType:
+          type: string
+          description: The sasType of the representation.
+    reportContentElement:
+      title: Report content element
+      description: The representation of a report content element.
+      x-sas-media-type:
+        name: application/vnd.sas.report.content.element
+        version: 1
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: The name for the report content element.
+          example: ve38
+        label:
+          type: string
+          description: The label for the report content element.
+          example: Bar Chart 1
+        type:
+          type: string
+          description: The type of the report content element.
+          example: Graph
+        version:
+          type: integer
+          description: The version number of the report content element representation. This representation is version 1.
+          example: 1
+    relationship:
+      title: Relationship
+      description: A relationship describes how two resources are related. The relationship contains a *subject* resource, the related resource, and the relationship type.
+      x-sas-media-type:
+        name: application/vnd.sas.relationship
+        version: 1
+      required:
+        - resourceUri
+        - relatedResourceUri
+        - type
+      properties:
+        id:
+          type: string
+          description: System-assigned unique ID for this object.
+        createdBy:
+          type: string
+          description: The id of the user who created the relationship.
+        creationTimeStamp:
+          type: string
+          format: date-time
+          description: The date and time that the relationship was created.
+        modifiedBy:
+          type: string
+          description: The id of the last user who modified the relationship.
+        modifiedTimeStamp:
+          type: string
+          format: date-time
+          description: The date and time that the relationship was last modified.
+        resourceUri:
+          type: string
+          description: The URI of the subject resource of this relationship.
+          format: uri
+        referenceId:
+          type: string
+          description: The id of the reference for the subject resource.
+        type:
+          type: string
+          description: The id of this relationship type.
+        relatedResourceUri:
+          type: string
+          description: The URI of the related resource of this relationship.
+          format: uri
+        relatedReferenceId:
+          type: string
+          description: The id of the reference for the related resource.
+        source:
+          type: string
+          description: The source of this relationship. Typically the URI of the resource that manages this relationship.
+          format: uri
+        links:
+          type: array
+          description: Zero or more links to related resources or operations.
+          items:
+            $ref: "#/components/schemas/link"
+        version:
+          type: integer
+          description: This media type's schema version number. This representation is version 1.
+    reportContentElement2:
+      title: Report content element
+      description: The representation of a report content element version 2.
+      x-sas-media-type:
+        name: application/vnd.sas.report.content.element
+        version: 2
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: The name for the report content element.
+          example: ve38
+        label:
+          type: string
+          description: The label for the report content element.
+          example: Bar Chart 1
+        type:
+          type: string
+          description: The type of the report content element.
+          example: Graph
+        subType:
+          type: string
+          description: The sub-type of the report content element.
+          example: BoxPlot
+        parent:
+          type: string
+          description: The parent of the report content element.
+          example: VisualElement
+        hidden:
+          type: boolean
+          description: Whether the report content element is hidden.
+          example: false
+        version:
+          type: integer
+          description: The version number of the report content element representation. This representation is version 2.
+          example: 2
+    link:
+      title: Link
+      type: object
+      description: A link to a related operation or resource.
+      required:
+        - rel
+      properties:
+        method:
+          type: string
+          description: The HTTP method for the link.
+        rel:
+          type: string
+          description: The relationship of the link to the resource.
+        uri:
+          type: string
+          description: The relative URI for the link.
+        href:
+          type: string
+          description: The URL for the link.
+        title:
+          type: string
+          description: The title for the link.
+        type:
+          type: string
+          description: The media type or link type for the link.
+        itemType:
+          type: string
+          description: If this is a link to a container, `itemType` is the media type or link type for the items in the container.
+        responseType:
+          type: string
+          description: The media type or link type of the response body for a `PUT`, `POST`, or `PATCH` operation.
+        responseItemType:
+          type: string
+          description: The media type or link type of the items in the response body for a `PUT`, `POST`, or `PATCH` operation.
+    transferObject:
+      title: Transfer Object
+      description: Content providers implementing the Transfer Object Provider contract use this media type to store information about the content to be transfered.
+      x-sas-media-type:
+        name: application/vnd.sas.transfer.object
+        version: 1
+      properties:
+        id:
+          type: string
+          format: object-id
+          description: unique identifier of the object
+        version:
+          type: integer
+          description: This media type's schema version number. This representation is version 1.
+        summary:
+          $ref: "#/components/schemas/summary"
+        content:
+          type: object
+          description: optional. Choose this or fileServiceContent. This is the content object that must be serialized in a format that is valid for internet transmission. This includes valid encoding formats like Base64 or data structures like JSON. This is provided by the content provider and the transfer service expects no visibility into or understanding of this value.
+        fileServiceContent:
+          type: string
+          description: optional. Choose this or content. This holds the URI of a file service object that contains the transferrable object.
+        connectors:
+          type: array
+          description: a list of associations or references to other external objects to be recreated on import
+          items:
+            $ref: "#/components/schemas/transferObjectConnector"
+        substitutions:
+          type: object
+          description: map with keys of parameter and value. Used to replace the value of parameter with the value of value
+        links:
+          type: array
+          description: Paging links that apply to this object
+          items:
+            $ref: "#/components/schemas/link"
+    error2:
+      title: Error
+      type: object
+      description: The representation of an error.
+      x-sas-media-type:
+        name: application/vnd.sas.error
+        version: 2
+      required:
+        - httpStatusCode
+        - version
+      properties:
+        message:
+          type: string
+          description: The message for the error.
+        id:
+          type: string
+          description: The string ID for the error.
+        errorCode:
+          type: integer
+          description: The numeric ID for the error.
+        httpStatusCode:
+          type: integer
+          description: The HTTP status code for the error.
+        details:
+          type: array
+          description: Messages that provide additional details about the cause of the error.
+          items:
+            type: string
+        remediation:
+          type: string
+          description: A message that describes how to resolve the error.
+        errors:
+          type: array
+          description: Any additional errors that occurred.
+          items:
+            $ref: "#/components/schemas/error2"
+        links:
+          type: array
+          description: The links that apply to the error.
+          items:
+            $ref: "#/components/schemas/link"
+        version:
+          type: integer
+          description: The version number of the error representation. This representation is version 2.
+    nameValuePair:
+      title: Property
+      description: The definition for attribute that needs to be used within indexable representation. Here attribute is name,value Pair
+      required:
+        - name
+        - value
+      properties:
+        name:
+          type: string
+          description: Name of the attribute
+        value:
+          type: string
+          description: Value of the attribute
+    transferObjectConnector:
+      title: Transfer Object Connector
+      description: Content providers implementing the Transfer Object Provider contract use this media type to provide connection information for the content to be transfered.
+      x-sas-media-type:
+        name: application/vnd.sas.transfer.object.connector
+        version: 1
+      properties:
+        id:
+          type: string
+          format: object-id
+          description: unique identifier of the object
+        name:
+          type: string
+          description: name of the related object
+        version:
+          type: integer
+          description: transfer object connector version
+        uri:
+          type: string
+          description: the URI of the related object
+        contentType:
+          type: string
+          description: media type of the related object
+        type:
+          type: string
+          description: type of connection. This can be any value the creator of the connection wants but should be used to determine what to do to reconstitute the relationship.
+        hints:
+          type: array
+          description: hints that can be used to help find the object to connect to in the target system
+          items:
+            type: string
+  parameters:
+    AcceptLanguage:
+      in: header
+      name: Accept-Language
+      description: Optional header.  If present, the locale it represents is used in processing, sorting, and filtering.
+      required: false
+      schema:
+        type: string
+    Start:
+      in: query
+      name: start
+      description: 0-based offset of the first item to return.
+      required: false
+      schema:
+        type: integer
+        default: 0
+    Limit:
+      in: query
+      name: limit
+      description: Maximum number of items to return.
+      required: false
+      schema:
+        type: integer
+        default: 20
+    AcceptItem:
+      in: header
+      name: Accept-Item
+      description: Optional, media type of collection item.
+      required: false
+      schema:
+        type: string
+    ParentFolderUri:
+      in: query
+      name: parentFolderUri
+      required: true
+      description: The URI of the parent folder of the report.
+      schema:
+        type: string
+        format: uri
+    ReportId:
+      in: path
+      name: reportId
+      description: Report id for this operation.
+      required: true
+      schema:
+        type: string
+        format: object-id
+    IfNoneMatch:
+      in: header
+      name: If-None-Match
+      description: Optional ETag. On a match, 304 (not modified) is returned.
+      required: false
+      schema:
+        type: string
+    IfModifiedSince:
+      in: header
+      name: If-Modified-Since
+      description: Optional `modifiedTimeStamp` of the resource. On a match, 304 (not modified) is returned.
+      required: false
+      schema:
+        type: string
+    IfMatch:
+      in: header
+      name: If-Match
+      description: The `ETag` that was returned from a `GET`, `POST`, `PUT`, or `HEAD` of this resource. If the `ETag` does not match, the update will fail.
+      schema:
+        type: string
+    IfUnmodifiedSince:
+      in: header
+      name: If-Unmodified-Since
+      description: The value of the `modifiedTimeStamp` of the resource.  If the resource has been updated since this time, the update will fail.
+      schema:
+        type: string
+    Characteristics:
+      in: query
+      name: characteristics
+      description: A '&#124;' (bar) separated list of characteristics of elements to return. A characteristic is a set of attributes of an element. An element has only one type but it can have many characteristics. If no characteristic is specified, then all elements are returned. Valid values are `visualElement`, `dataSource`, `visualElementsBySection`, and `visualElementsByHeaderSection`
+      required: false
+      schema:
+        type: string
+    ReportStateId:
+      in: path
+      name: stateId
+      description: Report state id to check.
+      required: true
+      schema:
+        type: string
+        format: object-id
+  requestBodies:
+    NewReport:
+      description: The report to create. A full report can be included, but only the `name` and `description` are used to create the new report.
+      required: true
+      content:
+        application/vnd.sas.report+json:
+          schema:
+            $ref: "#/components/schemas/newReport"
+          examples:
+            ReportCreated:
+              $ref: "#/components/examples/ReportCreated"
+        application/json:
+          schema:
+            $ref: "#/components/schemas/newReport"
+          examples:
+            ReportCreated:
+              $ref: "#/components/examples/ReportCreated"
+    UpdateReport:
+      description: Report to update. A full report can be included, but only `id`, `name`, and `description` are used to update the report.
+      required: true
+      content:
+        application/vnd.sas.report+json:
+          schema:
+            $ref: "#/components/schemas/updateReport"
+          examples:
+            ReportCreated:
+              $ref: "#/components/examples/ReportCreated"
+        application/json:
+          schema:
+            $ref: "#/components/schemas/updateReport"
+          examples:
+            ReportCreated:
+              $ref: "#/components/examples/ReportCreated"
+    AllFormat:
+      description: The report content to be saved.
+      required: true
+      content:
+        application/vnd.sas.report.content+json:
+          schema:
+            $ref: "#/components/schemas/reportContentJson"
+          examples:
+            ReportCreated:
+              $ref: "#/components/examples/ReportCreated"
+        application/vnd.sas.report.content+xml:
+          schema:
+            $ref: "#/components/schemas/reportContentXml"
+          examples:
+            ReportCreated:
+              $ref: "#/components/examples/ReportCreated"
+    ReportStateAllFormat:
+      description: The report state content to be saved.
+      required: true
+      content:
+        application/vnd.sas.report.content+json:
+          schema:
+            $ref: "#/components/schemas/reportStateContentJson"
+          examples:
+            ReportCreated:
+              $ref: "#/components/examples/ReportCreated"
+        application/vnd.sas.report.content+xml:
+          schema:
+            $ref: "#/components/schemas/reportStateContentXml"
+          examples:
+            ReportCreated:
+              $ref: "#/components/examples/ReportCreated"
+  examples:
+    ReportServiceNotFound:
+      description: Report services is not found.
+      summary: Not found error
+      value:
+        version: 2
+        httpStatusCode: 404
+        message: "Not Found: Service is not available"
+    ReportCollection.v1:
+      description: A collection of reports in standard report format.
+      summary: Reports collection
+      value:
+        links:
+          - method: GET
+            rel: collection
+            href: /reports/reports
+            uri: /reports/reports
+            type: application/vnd.sas.collection
+          - method: GET
+            rel: self
+            href: /reports/reports?sortBy=name&start=0&limit=20
+            uri: /reports/reports?sortBy=name&start=0&limit=20
+            type: application/vnd.sas.collection
+          - method: POST
+            rel: createReport
+            href: /reports/reports
+            uri: /reports/reports
+            type: application/vnd.sas.report
+            responseType: application/vnd.sas.report
+        name: reports
+        accept: application/vnd.sas.report
+        start: 0
+        count: 2
+        items:
+          - id: f8b66d4b-d67a-4e4e-a66d-b6f06b1820bf
+            name: Sample Report
+            createdBy: user1
+            creationTimeStamp: 2020-12-09T13:22:11.394000Z
+            modifiedBy: user1
+            modifiedTimeStamp: 2020-12-09T13:27:20.437000Z
+            links:
+              - method: GET
+                rel: self
+                href: /reports/reports/f8b66d4b-d67a-4e4e-a66d-b6f06b1820bf
+                uri: /reports/reports/f8b66d4b-d67a-4e4e-a66d-b6f06b1820bf
+                type: application/vnd.sas.report
+              - method: PUT
+                rel: updateContent
+                href: /reports/reports/f8b66d4b-d67a-4e4e-a66d-b6f06b1820bf/content
+                uri: /reports/reports/f8b66d4b-d67a-4e4e-a66d-b6f06b1820bf/content
+                type: application/vnd.sas.report.content
+                responseType: application/vnd.sas.report.content
+          - id: 6b0fdf5c-c091-455c-8ee7-6c9ff60b3565
+            name: Sample Report 2
+            createdBy: user2
+            creationTimeStamp: 2020-12-10T13:22:11.394000Z
+            modifiedBy: user2
+            modifiedTimeStamp: 2020-12-10T13:27:20.437000Z
+            links:
+              - method: GET
+                rel: self
+                href: /reports/reports/6b0fdf5c-c091-455c-8ee7-6c9ff60b3565
+                uri: /reports/reports/6b0fdf5c-c091-455c-8ee7-6c9ff60b3565
+                type: application/vnd.sas.report
+              - method: PUT
+                rel: updateContent
+                href: /reports/reports/6b0fdf5c-c091-455c-8ee7-6c9ff60b3565/content
+                uri: /reports/reports/6b0fdf5c-c091-455c-8ee7-6c9ff60b3565/content
+                type: application/vnd.sas.report.content
+                responseType: application/vnd.sas.report.content
+        limit: 20
+        version: 2
+    ReportSummaryCollection.v1:
+      description: A collection of reports in standard resource summary format.
+      summary: Reports summary collection
+      value:
+        links:
+          - method: GET
+            rel: collection
+            href: /reports/reports
+            uri: /reports/reports
+            type: application/vnd.sas.collection
+          - method: GET
+            rel: self
+            href: /reports/reports?sortBy=name&start=0&limit=20
+            uri: /reports/reports?sortBy=name&start=0&limit=20
+            type: application/vnd.sas.collection
+          - method: POST
+            rel: createReport
+            href: /reports/reports
+            uri: /reports/reports
+            type: application/vnd.sas.report
+            responseType: application/vnd.sas.report
+        name: reports
+        accept: application/vnd.sas.summary
+        start: 0
+        count: 2
+        items:
+          - id: f8b66d4b-d67a-4e4e-a66d-b6f06b1820bf
+            name: Sample Report
+            createdBy: user1
+            creationTimeStamp: 2020-12-09T13:22:11.394000Z
+            modifiedBy: user1
+            modifiedTimeStamp: 2020-12-09T13:27:20.437000Z
+            links:
+              - method: GET
+                rel: self
+                href: /reports/reports/f8b66d4b-d67a-4e4e-a66d-b6f06b1820bf
+                uri: /reports/reports/f8b66d4b-d67a-4e4e-a66d-b6f06b1820bf
+                type: application/vnd.sas.report
+              - method: PUT
+                rel: updateContent
+                href: /reports/reports/f8b66d4b-d67a-4e4e-a66d-b6f06b1820bf/content
+                uri: /reports/reports/f8b66d4b-d67a-4e4e-a66d-b6f06b1820bf/content
+                type: application/vnd.sas.report.content
+                responseType: application/vnd.sas.report.content
+            type: report
+            version: 1
+            iconUri: /reports/icons/report.gif
+          - id: 6b0fdf5c-c091-455c-8ee7-6c9ff60b3565
+            name: Sample Report 2
+            createdBy: user2
+            creationTimeStamp: 2020-12-10T13:22:11.394000Z
+            modifiedBy: user2
+            modifiedTimeStamp: 2020-12-10T13:27:20.437000Z
+            links:
+              - method: GET
+                rel: self
+                href: /reports/reports/6b0fdf5c-c091-455c-8ee7-6c9ff60b3565
+                uri: /reports/reports/6b0fdf5c-c091-455c-8ee7-6c9ff60b3565
+                type: application/vnd.sas.report
+              - method: PUT
+                rel: updateContent
+                href: /reports/reports/6b0fdf5c-c091-455c-8ee7-6c9ff60b3565/content
+                uri: /reports/reports/6b0fdf5c-c091-455c-8ee7-6c9ff60b3565/content
+                type: application/vnd.sas.report.content
+                responseType: application/vnd.sas.report.content
+            type: report
+            version: 1
+            iconUri: /reports/icons/report.gif
+        limit: 20
+        version: 2
+    ReportNotFound:
+      description: An error for report not found.
+      summary: Not found error
+      value:
+        errorCode: 10728
+        message: "An error occurred. The resource could not be found. Identifier: 5559a118-139b-46e4-adea-97198d9068f5."
+        details:
+          - "traceId: 1e2ce9a76a5e0a14"
+          - "path: /reports/reports/5559a118-139b-46e4-adea-97198d9068f5"
+        version: 2
+        httpStatusCode: 404
+    ReportContentNotFound:
+      description: An error for report content not found.
+      summary: Not found error
+      value:
+        errorCode: 10728
+        message: "An error occurred. The resource could not be found. Identifier: 5559a118-139b-46e4-adea-97198d9068f5."
+        details:
+          - "traceId: 1e2ce9a76a5e0a14"
+          - "path: /reports/reports/5559a118-139b-46e4-adea-97198d9068f5/content"
+        version: 2
+        httpStatusCode: 404
+    ReportETagNotMatched:
+      description: An error for report is found but with mismatched ETag.
+      summary: ETag not matched error
+      value:
+        errorCode: 10722
+        message: An error occurred. The action could not be performed. The provided resource is not the most current.
+        details:
+          - "traceId: ded22333af820cae"
+          - "path: /reports/reports/5559a118-139b-46e4-adea-97198d9068f5"
+        version: 2
+        httpStatusCode: 412
+    ReportETagMissing:
+      description: The request is missing the required ETag ('If-Match' or 'If-Unmodified-Since') header.
+      summary: Missing ETag error
+      value:
+        errorCode: 10720
+        message: "An error occurred. The action could not be performed: at least one header of the type 'If-Match' or 'If-Unmodified-Since' is required."
+        details:
+          - "traceId: fbcfd5f6cb5b4dc6"
+          - "path: /reports/reports/5559a118-139b-46e4-adea-97198d9068f5"
+        version: 2
+        httpStatusCode: 428
+    ReportContentETagNotMatched:
+      description: An error for report content is found but with mismatched ETag.
+      summary: ETag not matched error
+      value:
+        errorCode: 10722
+        message: An error occurred. The action could not be performed. The provided resource is not the most current.
+        details:
+          - "traceId: ded22333af820cae"
+          - "path: /reports/reports/5559a118-139b-46e4-adea-97198d9068f5/content"
+        version: 2
+        httpStatusCode: 412
+    ReportContentETagMissing:
+      description: The request is missing the required ETag ('If-Match' or 'If-Unmodified-Since') header.
+      summary: Missing ETag error
+      value:
+        errorCode: 10720
+        message: "An error occurred. The action could not be performed: at least one header of the type 'If-Match' or 'If-Unmodified-Since' is required."
+        details:
+          - "traceId: fbcfd5f6cb5b4dc6"
+          - "path: /reports/reports/5559a118-139b-46e4-adea-97198d9068f5/content"
+        version: 2
+        httpStatusCode: 428
+    BadReportContent:
+      description: An error for report content is not valid.
+      summary: Bad request content error
+      value:
+        errorCode": 10759
+        message: An error occurred. The report content could not be saved.
+        details:
+          - "traceId: 87b3021faef6ac38"
+          - "path: /reports/reports/c1e6b57b-bafc-4200-b900-7d8828b7845f/content"
+        version: 2
+        httpStatusCode: 400
+    ReportStateETagNotMatched:
+      description: An error for report state is found but with mismatched ETag.
+      summary: ETag not matched error
+      value:
+        errorCode: 0
+        message: An error occurred. The action could not be performed. The provided resource is not the most current.
+        details:
+          - "traceId: ded22333af820cae"
+          - "path: /reports/reports/8559a118-139b-46e4-adea-97198d9068f5/states/412f6f71-64eb-4840-a6a5-9a8e18fcad74"
+        version: 2
+        httpStatusCode: 412
+    ReportStateETagMissing:
+      description: An error for report state content is found but with mismatched ETag.
+      summary: Missing ETag error
+      value:
+        errorCode: 0
+        message: "An error occurred. The action could not be performed: at least one header of the type 'If-Match' or 'If-Unmodified-Since' is required."
+        details:
+          - "traceId: fbcfd5f6cb5b4dc6"
+          - "path: /reports/reports/8559a118-139b-46e4-adea-97198d9068f5/states/412f6f71-64eb-4840-a6a5-9a8e18fcad74"
+        version: 2
+        httpStatusCode: 428
+    ReportCreated:
+      description: A sample created report
+      summary: A successfully created report
+      value:
+        id: f8b66d4b-d67a-4e4e-a66d-b6f06b1820bf
+        name: Sample Report
+        description: Description of a sample report.
+        creationTimeStamp: 2025-06-19T10:15:30Z
+        label: my label
+        level: standard
+        properties:
+          - prop1
+          - prop2
+        resourceUri: /reports/reports/f8b66d4b-d67a-4e4e-a66d-b6f06b1820bf
+        sasType: report
+        schema: schema1
+        mediaType: 1
+        createdBy: user1
+        reportModifiedTimeStamp: 2025-06-19T11:45:00Z
+        modifiedBy: user1
+        links:
+          - method: GET
+            rel: self
+            href: /reports/reports/f8b66d4b-d67a-4e4e-a66d-b6f06b1820bf
+            uri: /reports/reports/f8b66d4b-d67a-4e4e-a66d-b6f06b1820bf
+            type: application/vnd.sas.report
+          - method: GET
+            rel: alternate
+            href: /reports/reports/f8b66d4b-d67a-4e4e-a66d-b6f06b1820bf
+            uri: /reports/reports/f8b66d4b-d67a-4e4e-a66d-b6f06b1820bf
+            type: application/vnd.sas.summary
+          - method: PUT
+            rel: update
+            href: /reports/reports/f8b66d4b-d67a-4e4e-a66d-b6f06b1820bf
+            uri: /reports/reports/f8b66d4b-d67a-4e4e-a66d-b6f06b1820bf
+            type: application/vnd.sas.report
+            responseType: application/vnd.sas.report
+          - method: PUT
+            rel: updateContent
+            href: /reports/reports/f8b66d4b-d67a-4e4e-a66d-b6f06b1820bf/content
+            uri: /reports/reports/f8b66d4b-d67a-4e4e-a66d-b6f06b1820bf/content
+            type: application/vnd.sas.report.content
+            responseType: application/vnd.sas.report.content
+        imageUris:
+          icon: /reports/icons/report.gif
+        version: 1

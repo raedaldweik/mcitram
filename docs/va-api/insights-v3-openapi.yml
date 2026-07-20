@@ -1,0 +1,432 @@
+openapi: 3.0.3
+info:
+  title: Insights
+  version: "3"
+  description: The Insights API provides insights into your data.
+  contact:
+    name: SAS Developers
+    url: https://developer.sas.com
+    email: devex@sas.com
+tags:
+  - name: Root
+    description: Contains the operations for the root resource.
+  - name: Explain
+    description: Contains the operations for the explain resource.
+paths:
+  /:
+    get:
+      summary: Get a collection of top-level links
+      description: Returns a collection of links to the top-level collections.
+      operationId: root
+      tags:
+        - Root
+      responses:
+        "200":
+          description: The version information for the API, as well as the top-level API entry points.
+          content:
+            application/vnd.sas.api+json:
+              schema:
+                $ref: "#/components/schemas/api"
+              examples:
+                one:
+                  $ref: "#/components/examples/rootGetExample"
+            application/json:
+              schema:
+                $ref: "#/components/schemas/api"
+              examples:
+                one:
+                  $ref: "#/components/examples/rootGetExample"
+        "404":
+          description: The service is not available
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                one:
+                  $ref: "#/components/examples/error404Example"
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                one:
+                  $ref: "#/components/examples/error404Example"
+  /explain:
+    post:
+      description: Explains the specified column in relation to the other columns in the data. The data is processed into human friendly sentences. This call is a GET via POST.
+      summary: Explains the column in the data source
+      operationId: getExplanation
+      parameters:
+        - in: header
+          name: Accept-Language
+          schema:
+            type: string
+          description: The user's language, which is used to create the description strings.  If this header is not set, the language will be the default language of the service.
+        - in: header
+          name: Accept-Locale
+          schema:
+            type: string
+          description: A "format locale" that is distinct from the user's language (Accept-Language). Its syntax is similar to Accept-Language. It is used to format numeric values and provides a way for the numeric formatting to be different than the typical numeric formatting of the language.  If this header is not set, the language locale will be used.
+      requestBody:
+        content:
+          application/vnd.sas.insights.explain.definition:
+            schema:
+              $ref: "#/components/schemas/explainDefinition"
+            examples:
+              example:
+                $ref: "#/components/examples/explainRequestExample"
+          application/json:
+            schema:
+              $ref: "#/components/schemas/explainDefinition"
+            examples:
+              example:
+                $ref: "#/components/examples/explainRequestExample"
+        description: Explain definition information
+      tags:
+        - Explain
+      responses:
+        "200":
+          description: The explanation of the column in relation to the other columns in the data.
+          content:
+            application/vnd.sas.insights.explain.result:
+              schema:
+                $ref: "#/components/schemas/explainResult"
+              examples:
+                one:
+                  $ref: "#/components/examples/explainResultExample"
+            application/json:
+              schema:
+                $ref: "#/components/schemas/explainResult"
+              examples:
+                one:
+                  $ref: "#/components/examples/explainResultExample"
+        "400":
+          description: Bad Request.  The request body is not properly formed. This can happen for a variety of reasons including missing required fields in the body, troubles accessing the specified CAS table, and the specified column name is not in the CAS data source.
+          content:
+            application/vnd.sas.error+json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                one:
+                  $ref: "#/components/examples/error400Example"
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error2"
+              examples:
+                one:
+                  $ref: "#/components/examples/error400Example"
+servers: []
+components:
+  schemas:
+    explainDefinition:
+      description: The definition of the explanation that you want to perform.
+      required:
+        - cas
+        - targetVariable
+      properties:
+        version:
+          type: integer
+          description: The version of the schema.
+          example: 3
+        cas:
+          $ref: "#/components/schemas/cas"
+        targetVariable:
+          type: string
+          description: The target variable column name in the table that you want to explain.
+          example: columnName
+        includeVariableDescription:
+          type: boolean
+          description: An optional flag to generate the variable description. One of these variables must be true&#58; includeVariableDescription or includeOutlierDescription. The default value is true.
+          example: true
+        includeOutlierDescription:
+          type: boolean
+          description: An optional flag to generate the outlier description. One of these variables must be true&#58; includeVariableDescription or includeOutlierDescription. The default value is false.
+          example: false
+        useMissing:
+          type: boolean
+          description: An optional flag to tell you if missing values should be included in (true) or ignored by (false) the analysis. The default value is true.
+          example: false
+        dateVariable:
+          type: string
+          description: The name of the time series column. When present, the time series column is used to generate forecast insights.
+          example: Date
+        includeVariableScreeningResults:
+          type: boolean
+          description: An optional flag to generate the variable screening results. The default value is true.
+          example: false
+    explainResult:
+      description: The explanation results.
+      properties:
+        version:
+          type: integer
+          description: The version of the schema.
+          example: 1
+        variableDescription:
+          type: string
+          description: A description of the specified column in relation to the other columns in the data. This value is filled only if the showVariableDescription variable is true.
+          example: A string that describes the specified column.
+        outlierDescription:
+          type: string
+          description: A description of the outliers for the specified column in relation to the other columns in the data. This value is filled only if the showOutlierDescription variable is true.
+          example: A string that describes the outliers of the specified column.
+        forecastDescription:
+          type: string
+          description: A description of the forecast for the specified column in relation to the other columns in the data. This value is filled only if the showForecastDescription variable is true.
+          example: A string that describes the forecast of the specified column.
+        variableScreeningResults:
+          type: array
+          description: The results of variable screening. There will be an item for each column in the CAS data source that is not the specified column or time series column.
+          items:
+            $ref: "#/components/schemas/screeningResult"
+        warnings:
+          type: array
+          description: warnings from the service. each warning item in the array is a code and message pair.
+          items:
+            $ref: "#/components/schemas/warn"
+    cas:
+      description: The CAS resource specification.
+      type: object
+      required:
+        - server
+        - library
+        - table
+      properties:
+        server:
+          type: string
+          description: The server name for the CAS resource.
+          example: cas-shared-default
+        library:
+          type: string
+          description: The library for the CAS resource.
+          example: Public
+        table:
+          type: string
+          description: The table for the CAS resource.
+          example: tableName
+        sessionId:
+          type: string
+          description: An optional CAS session ID. If no session ID is specified, a new CAS session will be created, used, and then destroyed.
+          format: uuid
+          example: 4ad6e49d-7997-7b40-aee6-5d0d57b1e81e
+    screeningResult:
+      description: The variable screening result for a column in the CAS table.
+      type: object
+      required:
+        - columnName
+        - label
+        - actionTaken
+        - reasons
+        - actionsTaken
+      properties:
+        columnName:
+          type: string
+          description: The name of the column in the CAS data source.
+          example: columnName
+        label:
+          type: string
+          description: The label of the column in the CAS data source.
+          example: label
+        actionTaken:
+          type: string
+          description: The field will be blank when the variable screening does nothing for this column.  Otherwise, the string will describe what the variable screening did (such as reject, convert, and so on.)
+          example: The factor was rejected because it has too many missing values.
+        actionsTaken:
+          type: array
+          description: The field will be an empty array when the variable screening does nothing for this column. Otherwise, The field contains all variable screening decisions such as reject, convert, and so on.
+          example:
+            - The measure was converted to category because relatively few distinct levels were detected.
+            - The factor was rejected because it has too many missing values.
+        reasons:
+          type: array
+          description: The field will be an empty array when the variable screening does nothing for this column. Otherwise, The field contains the reason codes of all variable screening decisions such as MeasureLevelsDetected, TooManyMissingValues, and so on.
+          example:
+            - MeasureLevelsDetected
+            - TooManyMissingValues
+    warn:
+      description: The object that holds warning messages from the service.
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: The concise string representing a warning.
+          example: NewEventLevelChosen
+        message:
+          type: string
+          description: The localized and human readable warning message
+          example: The selected event level is no longer available. A new event level has been chosen.
+    api:
+      title: API
+      description: The list of links to top-level resources and operations available from the root of the API.
+      x-sas-media-type:
+        name: application/vnd.sas.api
+        version: 1
+      required:
+        - version
+        - links
+      properties:
+        version:
+          type: integer
+          description: The version number of the API representation. This is version 1.
+          minimum: 1
+        links:
+          description: The API's top-level links.
+          type: array
+          items:
+            $ref: "#/components/schemas/link"
+    error2:
+      title: Error
+      type: object
+      description: The representation of an error.
+      x-sas-media-type:
+        name: application/vnd.sas.error
+        version: 2
+      required:
+        - httpStatusCode
+        - version
+      properties:
+        message:
+          type: string
+          description: The message for the error.
+        id:
+          type: string
+          description: The string ID for the error.
+        errorCode:
+          type: integer
+          description: The numeric ID for the error.
+        httpStatusCode:
+          type: integer
+          description: The HTTP status code for the error.
+        details:
+          type: array
+          description: Messages that provide additional details about the cause of the error.
+          items:
+            type: string
+        remediation:
+          type: string
+          description: A message that describes how to resolve the error.
+        errors:
+          type: array
+          description: Any additional errors that occurred.
+          items:
+            $ref: "#/components/schemas/error2"
+        links:
+          type: array
+          description: The links that apply to the error.
+          items:
+            $ref: "#/components/schemas/link"
+        version:
+          type: integer
+          description: The version number of the error representation. This representation is version 2.
+    link:
+      title: Link
+      type: object
+      description: A link to a related operation or resource.
+      required:
+        - rel
+      properties:
+        method:
+          type: string
+          description: The HTTP method for the link.
+        rel:
+          type: string
+          description: The relationship of the link to the resource.
+        uri:
+          type: string
+          description: The relative URI for the link.
+        href:
+          type: string
+          description: The URL for the link.
+        title:
+          type: string
+          description: The title for the link.
+        type:
+          type: string
+          description: The media type or link type for the link.
+        itemType:
+          type: string
+          description: If this is a link to a container, `itemType` is the media type or link type for the items in the container.
+        responseType:
+          type: string
+          description: The media type or link type of the response body for a `PUT`, `POST`, or `PATCH` operation.
+        responseItemType:
+          type: string
+          description: The media type or link type of the items in the response body for a `PUT`, `POST`, or `PATCH` operation.
+  examples:
+    rootGetExample:
+      summary: Root response
+      description: Root response
+      value:
+        version: 1
+        links:
+          - method: GET
+            rel: self
+            href: /insights
+            uri: /insights
+            type: application/vnd.sas.api
+          - method: POST
+            rel: /explain
+            href: /insights/explain
+            uri: /insights/explain
+            type: application/vnd.sas.api
+    error400Example:
+      summary: 400 Error
+      description: 400 Error
+      value:
+        message: An error occurred.
+        errorCode: 104501
+        httpStatusCode: 400
+        details:
+          - An error occurred.
+        errors:
+          - An error occurred.
+        version: 1
+    explainResultExample:
+      summary: Explain result
+      description: Explain result
+      value:
+        version: 1
+        variableDescription: A string that describes the specified column.
+        outlierDescription: A string that describes the outliers of the specified column.
+        forecastDescription: A string that describes the forecast of the specified column.
+        variableScreeningResults:
+          - columnName: columnName
+            label: label
+            actionTaken: The factor was rejected because it has too many missing values.
+            actionsTaken:
+              - The measure was converted to category because relatively few distinct levels were detected.
+              - The factor was rejected because it has too many missing values.
+            reasons:
+              - MeasureLevelsDetected
+              - TooManyMissingValues
+        warnings:
+          - code: NewEventLevelChosen
+            message: The selected event level is no longer available. A new event level has been chosen.
+    explainRequestExample:
+      summary: Example request body for explain
+      description: Example request body for explain
+      value:
+        cas:
+          server: cas-server-name
+          library: caslib
+          table: dataTable
+        targetVariable: variableName
+        includeVariableDescription: true
+        includeOutlierDescription: true
+        useMissing: true
+        dateVariable: ""
+        includeVariableScreeningResults: true
+    error404Example:
+      summary: 404 Error
+      description: 404 Error
+      value:
+        message: An error occurred.
+        errorCode: 104501
+        httpStatusCode: 404
+        details:
+          - An error occurred.
+        errors:
+          - An error occurred.
+        version: 1
