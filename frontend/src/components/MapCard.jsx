@@ -20,16 +20,16 @@ const VECTOR_STYLE_URL = import.meta.env.VITE_MAP_STYLE_URL || '';
 const USE_RASTER = String(import.meta.env.VITE_MAP_RASTER || '').toLowerCase() === 'true';
 
 // SAS palette (mirrors src/index.css tokens).
-const SAS_BLUE = '#0766D1';
-const SAS_BLUE_HI = '#2E8BE6';
-const TEAL = '#0e7490';
-const INK = '#0a1628';
+const SAS_BLUE = '#BC3B33';
+const SAS_BLUE_HI = '#D08479';
+const TEAL = '#B07A2A';
+const INK = '#1C1913';
 
 const SEVERITY_COLOR = {
-  major: '#0766D1',
+  major: '#BC3B33',
   moderate: '#ea580c',
   minor: '#ca8a04',
-  unknown: '#64748b',
+  unknown: '#8B8676',
 };
 
 // Light TomTom raster basemap as a MapLibre style object (flat — no 3D).
@@ -47,7 +47,7 @@ function rasterStyle(key) {
       },
     },
     layers: [
-      { id: 'bg', type: 'background', paint: { 'background-color': '#eef1f4' } },
+      { id: 'bg', type: 'background', paint: { 'background-color': '#EFEBE0' } },
       { id: 'tomtom-basic', type: 'raster', source: 'tomtom-basic' },
     ],
   };
@@ -286,10 +286,10 @@ export default function MapCard({ spec }) {
           <button
             className="mc-traffic-btn"
             onClick={() => setTrafficOn((v) => !v)}
-            style={{ borderColor: trafficOn ? SAS_BLUE : 'rgba(15,23,42,0.12)', color: trafficOn ? SAS_BLUE : INK }}
+            style={{ borderColor: trafficOn ? SAS_BLUE : 'rgba(28,25,19,0.12)', color: trafficOn ? SAS_BLUE : INK }}
             title="Toggle live traffic"
           >
-            <span className="mc-traffic-dot" style={{ background: trafficOn ? SAS_BLUE : '#94a3b8' }} />
+            <span className="mc-traffic-dot" style={{ background: trafficOn ? SAS_BLUE : '#8B8676' }} />
             Traffic
           </button>
         )}

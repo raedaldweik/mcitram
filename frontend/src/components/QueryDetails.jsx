@@ -11,10 +11,10 @@ const fmt = (v) => {
 function Section({ title, count, children, defaultOpen = false }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(7,102,209,0.14)' }}>
+    <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(188,59,51,0.14)' }}>
       <button onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-2 px-4 py-2.5 text-left transition-all hover:bg-[rgba(7,102,209,0.04)]"
-        style={{ background: 'rgba(7,102,209,0.05)' }}>
+        className="w-full flex items-center gap-2 px-4 py-2.5 text-left transition-all hover:bg-[rgba(188,59,51,0.04)]"
+        style={{ background: 'rgba(188,59,51,0.05)' }}>
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2.5"
           style={{ transform: open ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s' }}>
           <polyline points="9 18 15 12 9 6" />
@@ -22,7 +22,7 @@ function Section({ title, count, children, defaultOpen = false }) {
         <span className="text-[12px] font-bold" style={{ color: 'var(--text)' }}>{title}</span>
         {count != null && (
           <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold"
-            style={{ background: 'rgba(7,102,209,0.10)', color: 'var(--gold)' }}>{count}</span>
+            style={{ background: 'rgba(188,59,51,0.10)', color: 'var(--gold)' }}>{count}</span>
         )}
       </button>
       {open && <div className="px-4 py-3 space-y-3">{children}</div>}
@@ -37,7 +37,7 @@ function Mono({ label, value, max = 4000 }) {
     <div>
       {label && <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--text-dim)' }}>{label}</p>}
       <pre className="text-[11px] px-2.5 py-2 rounded-lg whitespace-pre-wrap break-all max-h-[260px] overflow-y-auto font-mono leading-[1.6]"
-        style={{ background: 'rgba(15,23,42,0.035)', color: 'var(--text-md)', border: '1px solid rgba(15,23,42,0.06)' }}>
+        style={{ background: 'rgba(28,25,19,0.035)', color: 'var(--text-md)', border: '1px solid rgba(28,25,19,0.06)' }}>
         {text.slice(0, max)}{text.length > max ? '\n… (truncated)' : ''}
       </pre>
     </div>
@@ -46,7 +46,7 @@ function Mono({ label, value, max = 4000 }) {
 
 const Pill = ({ children }) => (
   <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
-    style={{ background: 'rgba(7,102,209,0.08)', color: 'var(--gold-lo)', border: '1px solid rgba(7,102,209,0.15)' }}>
+    style={{ background: 'rgba(188,59,51,0.08)', color: 'var(--gold-lo)', border: '1px solid rgba(188,59,51,0.15)' }}>
     {children}
   </span>
 );
@@ -82,7 +82,7 @@ export default function QueryDetails({ data, query, onClose, onOpenSource }) {
         onClick={e => e.stopPropagation()} style={{ background: 'rgba(255,255,255,0.96)' }}>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-[rgba(7,102,209,0.10)]">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-[rgba(188,59,51,0.10)]">
           <div className="flex items-center gap-2 min-w-0">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2" className="shrink-0">
               <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
@@ -91,7 +91,7 @@ export default function QueryDetails({ data, query, onClose, onOpenSource }) {
             <span className="text-sm font-bold" style={{ color: 'var(--text)' }}>{t('queryDetails')}</span>
             {loading && <span className="text-[10.5px] animate-pulse" style={{ color: 'var(--text-dim)' }}>{t('loadingTrace')}</span>}
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[rgba(7,102,209,0.08)]" style={{ color: 'var(--text-dim)' }}>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[rgba(188,59,51,0.08)]" style={{ color: 'var(--text-dim)' }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
@@ -101,7 +101,7 @@ export default function QueryDetails({ data, query, onClose, onOpenSource }) {
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
 
           {/* Question */}
-          <div className="rounded-xl px-4 py-3" style={{ background: 'rgba(7,102,209,0.05)', border: '1px solid rgba(7,102,209,0.14)' }}>
+          <div className="rounded-xl px-4 py-3" style={{ background: 'rgba(188,59,51,0.05)', border: '1px solid rgba(188,59,51,0.14)' }}>
             <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--text-dim)' }}>{t('inputPrompt')}</p>
             <p className="text-[12.5px] leading-relaxed" style={{ color: 'var(--text)' }}>{query || data.content || '(unknown)'}</p>
           </div>
@@ -119,10 +119,10 @@ export default function QueryDetails({ data, query, onClose, onOpenSource }) {
           <Section title={t('toolCallsSection')} count={toolCalls.length} defaultOpen={toolCalls.length > 0}>
             {toolCalls.length === 0 && <p className="text-[11.5px]" style={{ color: 'var(--text-dim)' }}>{t('noToolCalls')}</p>}
             {toolCalls.map((c, i) => (
-              <div key={c.id || i} className="rounded-lg px-3 py-2.5 space-y-2" style={{ border: '1px solid rgba(7,102,209,0.10)' }}>
+              <div key={c.id || i} className="rounded-lg px-3 py-2.5 space-y-2" style={{ border: '1px solid rgba(188,59,51,0.10)' }}>
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
-                    style={{ background: 'rgba(7,102,209,0.12)', color: 'var(--gold)' }}>{i + 1}</span>
+                    style={{ background: 'rgba(188,59,51,0.12)', color: 'var(--gold)' }}>{i + 1}</span>
                   <span className="text-[12px] font-bold font-mono" style={{ color: 'var(--gold-lo)' }}>{c.toolName || 'tool'}</span>
                   {c.output?.isError && <Pill>error</Pill>}
                   {c.cost != null && c.cost > 0 && <Pill>${Number(c.cost).toFixed(4)}</Pill>}
@@ -137,7 +137,7 @@ export default function QueryDetails({ data, query, onClose, onOpenSource }) {
           <Section title={t('retrievalSection')} count={retrievalCalls.length}>
             {retrievalCalls.length === 0 && <p className="text-[11.5px]" style={{ color: 'var(--text-dim)' }}>{t('noRetrieval')}</p>}
             {retrievalCalls.map((c, i) => (
-              <div key={c.id || i} className="rounded-lg px-3 py-2.5 space-y-2" style={{ border: '1px solid rgba(7,102,209,0.10)' }}>
+              <div key={c.id || i} className="rounded-lg px-3 py-2.5 space-y-2" style={{ border: '1px solid rgba(188,59,51,0.10)' }}>
                 <Mono label={t('inputLabel')} value={c.input} />
                 <Mono label={t('outputLabel')} value={c.output} />
               </div>
@@ -148,7 +148,7 @@ export default function QueryDetails({ data, query, onClose, onOpenSource }) {
           <Section title={t('llmSection')} count={llmCalls.length}>
             {llmCalls.length === 0 && <p className="text-[11.5px]" style={{ color: 'var(--text-dim)' }}>{t('noLlm')}</p>}
             {llmCalls.map((c, i) => (
-              <div key={c.id || i} className="rounded-lg px-3 py-2.5 space-y-2" style={{ border: '1px solid rgba(7,102,209,0.10)' }}>
+              <div key={c.id || i} className="rounded-lg px-3 py-2.5 space-y-2" style={{ border: '1px solid rgba(188,59,51,0.10)' }}>
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-[12px] font-bold font-mono" style={{ color: 'var(--gold-lo)' }}>
                     {'LLM'}
@@ -175,7 +175,7 @@ export default function QueryDetails({ data, query, onClose, onOpenSource }) {
               const meta = doc?.metadata || {};
               const label = meta.filename || meta.source || meta.file_name || meta.title || `Source ${i + 1}`;
               return (
-                <div key={i} className="rounded-lg px-3 py-2.5" style={{ border: '1px solid rgba(7,102,209,0.10)' }}>
+                <div key={i} className="rounded-lg px-3 py-2.5" style={{ border: '1px solid rgba(188,59,51,0.10)' }}>
                   <div className="flex items-center gap-2 mb-1.5">
                     <span className="text-[11.5px] font-bold truncate" style={{ color: 'var(--gold-lo)' }}>{label}</span>
                     {meta.page != null && <Pill>p. {meta.page}</Pill>}

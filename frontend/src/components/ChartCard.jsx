@@ -10,8 +10,9 @@ import { useMemo, useRef, useState } from 'react';
  */
 
 // SAS-themed categorical palette (mirrors src/index.css tokens).
-const PALETTE = ['#0766D1', '#0e7490', '#b45309', '#047857', '#054A99',
-                 '#475569', '#2E8BE6', '#0891b2', '#92400e', '#1e293b'];
+// Categorical series colors drawn from the Strategic Reserve Monitor palette
+const PALETTE = ['#BC3B33', '#B07A2A', '#4A453A', '#5B7A43', '#8F2D27',
+                 '#8B8676', '#D08479', '#C89A4B', '#1F1C16', '#B7B0A0'];
 
 const VB_W = 720;
 const VB_H = 380;
@@ -152,16 +153,16 @@ function Cartesian({ type, labels, series, stacked, xKey, onHover, onLeave }) {
       {ticks.map((tv, t) => (
         <g key={t}>
           <line x1={M.left} x2={M.left + PLOT_W} y1={yPix(tv)} y2={yPix(tv)}
-                stroke="rgba(15,23,42,0.08)" strokeWidth="1" />
+                stroke="rgba(28,25,19,0.08)" strokeWidth="1" />
           <text x={M.left - 8} y={yPix(tv) + 3} textAnchor="end"
-                fontSize="11" fill="#94a3b8">{fmt(tv)}</text>
+                fontSize="11" fill="#8B8676">{fmt(tv)}</text>
         </g>
       ))}
       {/* axes */}
       <line x1={M.left} x2={M.left} y1={M.top} y2={M.top + PLOT_H}
-            stroke="rgba(15,23,42,0.18)" />
+            stroke="rgba(28,25,19,0.18)" />
       <line x1={M.left} x2={M.left + PLOT_W} y1={M.top + PLOT_H} y2={M.top + PLOT_H}
-            stroke="rgba(15,23,42,0.18)" />
+            stroke="rgba(28,25,19,0.18)" />
 
       {/* series geometry */}
       {type === 'bar' && <Bars {...{ series, stacked, n, bandW, xCenter, yPix, yMin }} />}
@@ -173,7 +174,7 @@ function Cartesian({ type, labels, series, stacked, xKey, onHover, onLeave }) {
       {/* x labels */}
       {labels.map((lab, i) => (
         <text key={i} x={xCenter(i)} y={M.top + PLOT_H + (rotate ? 14 : 18)}
-              textAnchor={rotate ? 'end' : 'middle'} fontSize="11" fill="#475569"
+              textAnchor={rotate ? 'end' : 'middle'} fontSize="11" fill="#57534A"
               transform={rotate ? `rotate(-35 ${xCenter(i)} ${M.top + PLOT_H + 14})` : undefined}>
           {lab.length > 14 ? `${lab.slice(0, 13)}…` : lab}
         </text>

@@ -14,28 +14,22 @@ export default function Header() {
 
   return (
     <header className="app-header">
-      {/* brand lockup — start side */}
-      <div className="header-lockup">
-        <img className="gov-logo" src="/sas-logo.png" alt="SAS"
-          onError={e => { e.target.style.display = 'none'; }} />
-      </div>
-
-      {/* Title + green accent line */}
+      {/* Title + accent line (no logo — text brand like the dashboard) */}
       <div className="title-block">
         <div className="title-row">
-          <h1 className="app-title">{t('appTitle')}</h1>
+          <h1 className="app-title">{t('appTitle')}<span style={{ color: 'var(--gold)' }}>.</span></h1>
           <div className="accent-line" />
         </div>
       </div>
 
-      {/* Language toggle + connection status + SAS logo — end side */}
+      {/* Language toggle + connection status — end side */}
       <div className="flex items-center gap-3">
         <button onClick={toggle}
           title={lang === 'ar' ? 'Switch to English' : 'التبديل إلى العربية'}
           className="px-3.5 py-1.5 rounded-full text-[11.5px] font-bold transition-all hover:scale-105"
           style={{
             background: 'rgba(255,255,255,0.65)', backdropFilter: 'blur(12px)',
-            border: '1px solid rgba(7,102,209,0.30)', color: 'var(--gold-lo)',
+            border: '1px solid rgba(188,59,51,0.30)', color: 'var(--gold-lo)',
           }}>
           {t('langButton')}
         </button>
@@ -49,9 +43,6 @@ export default function Header() {
               : t('backendOffline')}
           </span>
         </div>
-        {/* SAS logo — far end */}
-        <img className="org-logo" src="/sas-logo.png" alt="SAS"
-          onError={e => { e.target.style.display = 'none'; }} />
       </div>
     </header>
   );

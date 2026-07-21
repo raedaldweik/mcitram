@@ -177,7 +177,7 @@ export default function ChatPage() {
 
       {/* Chat history panel (left) — past query sessions + local chats */}
       <div className="w-[260px] shrink-0 glass-card flex flex-col">
-        <div className="p-4 border-b border-[rgba(15,23,42,0.07)]">
+        <div className="p-4 border-b border-[rgba(28,25,19,0.07)]">
           <p className="panel-title">{t('recentConversations')}</p>
         </div>
         <div className="flex-1 overflow-y-auto p-2 space-y-1">
@@ -199,17 +199,17 @@ export default function ChatPage() {
                       className={`flex-1 flex items-center gap-2 px-3 py-2.5 rounded-lg text-xs text-left truncate transition-all ${
                         chat.id === activeChatId
                           ? 'font-semibold'
-                          : 'hover:bg-[rgba(7,102,209,0.05)] border border-transparent'
+                          : 'hover:bg-[rgba(188,59,51,0.05)] border border-transparent'
                       }`}
                       style={chat.id === activeChatId
-                        ? { color: 'var(--gold-lo)', background: 'rgba(7,102,209,0.14)', border: '1px solid rgba(7,102,209,0.30)', borderInlineStart: '3px solid var(--gold)' }
+                        ? { color: 'var(--gold-lo)', background: 'rgba(188,59,51,0.14)', border: '1px solid rgba(188,59,51,0.30)', borderInlineStart: '3px solid var(--gold)' }
                         : { color: 'var(--text-md)' }
                       }>
                       <span className="text-sm">💬</span>
                       <span className="truncate flex-1">{chat.title === 'New conversation' ? t('newConversationTitle') : chat.title}</span>
                     </button>
                     <button onClick={e => { e.stopPropagation(); setChatMenu(menuOpen ? null : chat.id); }}
-                      className="p-1 rounded-md opacity-0 group-hover:opacity-100 hover:bg-[rgba(7,102,209,0.1)] transition-all shrink-0 ml-0.5"
+                      className="p-1 rounded-md opacity-0 group-hover:opacity-100 hover:bg-[rgba(188,59,51,0.1)] transition-all shrink-0 ml-0.5"
                       style={{ color: 'var(--text-faint)' }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/>
@@ -221,8 +221,8 @@ export default function ChatPage() {
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setChatMenu(null)} />
                     <div className="absolute right-0 top-full mt-0.5 rounded-xl shadow-xl overflow-hidden z-50 min-w-[130px] animate-fade-up"
-                      style={{ background: 'rgba(255,255,255,0.96)', border: '1px solid rgba(7,102,209,0.2)', backdropFilter: 'blur(20px)' }}>
-                      <button onClick={() => startRename(chat)} className="w-full flex items-center gap-2 px-3 py-2 text-[11px] hover:bg-[rgba(7,102,209,0.05)]" style={{ color: 'var(--text-md)' }}>
+                      style={{ background: 'rgba(255,255,255,0.96)', border: '1px solid rgba(188,59,51,0.2)', backdropFilter: 'blur(20px)' }}>
+                      <button onClick={() => startRename(chat)} className="w-full flex items-center gap-2 px-3 py-2 text-[11px] hover:bg-[rgba(188,59,51,0.05)]" style={{ color: 'var(--text-md)' }}>
                         {t('rename')}
                       </button>
                       <button onClick={() => { deleteChat(chat.id); setChatMenu(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-[11px] hover:bg-[var(--red-bg)]" style={{ color: 'var(--red)' }}>
@@ -235,10 +235,10 @@ export default function ChatPage() {
             );
           })}
         </div>
-        <div className="p-3 border-t border-[rgba(15,23,42,0.07)]">
+        <div className="p-3 border-t border-[rgba(28,25,19,0.07)]">
           <button onClick={() => { createNewChat(); }}
             className="w-full py-2.5 rounded-lg text-xs font-bold transition-all"
-            style={{ border: '2px dashed rgba(7,102,209,0.35)', color: 'var(--gold)', background: 'rgba(7,102,209,0.03)' }}>
+            style={{ border: '2px dashed rgba(188,59,51,0.35)', color: 'var(--gold)', background: 'rgba(188,59,51,0.03)' }}>
             {t('newConversation')}
           </button>
         </div>
@@ -246,10 +246,8 @@ export default function ChatPage() {
 
       {/* Main chat area */}
       <div className="flex-1 glass-card flex flex-col relative" style={{ boxShadow: 'var(--glass-shadow-lg)' }}>
-        <img src="/sas-logo.png" alt="" className="chat-watermark" onError={e => e.target.style.display='none'} />
-
         {/* Header: conversation title + agent dropdown */}
-        <div className="flex items-center justify-between px-6 py-3 border-b border-[rgba(15,23,42,0.07)] relative z-[5]">
+        <div className="flex items-center justify-between px-6 py-3 border-b border-[rgba(28,25,19,0.07)] relative z-[5]">
           <div className="flex items-center gap-2 min-w-0">
             <span className="w-[3px] h-4 rounded shrink-0" style={{ background: 'var(--gold-grad)' }} />
             <span className="text-sm font-bold truncate" style={{ color: 'var(--text)' }}>{(activeChat?.title && activeChat.title !== 'New conversation') ? activeChat.title : t('newConversationTitle')}</span>
@@ -265,13 +263,13 @@ export default function ChatPage() {
               {/* Avatar */}
               {msg.role === 'user' ? (
                 <div className="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center text-xs font-bold"
-                  style={{ background: 'rgba(7,102,209,0.12)', border: '1px solid rgba(7,102,209,0.28)', color: 'var(--gold-lo)' }}>
+                  style={{ background: 'rgba(188,59,51,0.12)', border: '1px solid rgba(188,59,51,0.28)', color: 'var(--gold-lo)' }}>
                   You
                 </div>
               ) : (
-                <div className="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center p-1"
-                  style={{ background: 'var(--nav-grad)', border: '1px solid rgba(59,155,232,0.3)' }}>
-                  <img src="/sas-logo.png" alt="Assistant" className="w-full h-full object-contain" />
+                <div className="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center text-[10px] font-bold tracking-wide"
+                  style={{ background: 'var(--nav-grad)', border: '1px solid rgba(188,59,51,0.3)', color: '#FBFAF5' }}>
+                  AI
                 </div>
               )}
               {/* Bubble */}
@@ -286,7 +284,7 @@ export default function ChatPage() {
                     style={{ color: msg.isError ? undefined : 'var(--text)' }}>
                     {msg.attachmentName && (
                       <div className="flex items-center gap-1.5 mb-2 px-2 py-1 rounded-md text-[11px] font-semibold w-fit"
-                        style={{ background: 'rgba(7,102,209,0.10)', border: '1px solid rgba(7,102,209,0.22)', color: 'var(--gold-lo)' }}>
+                        style={{ background: 'rgba(188,59,51,0.10)', border: '1px solid rgba(188,59,51,0.22)', color: 'var(--gold-lo)' }}>
                         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                           <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
                         </svg>
@@ -304,9 +302,9 @@ export default function ChatPage() {
             const steps = traceSteps(liveTrace);
             return (
               <div className="flex gap-2.5 animate-fade-up">
-                <div className="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center p-1"
-                  style={{ background: 'var(--nav-grad)', border: '1px solid rgba(59,155,232,0.3)' }}>
-                  <img src="/sas-logo.png" alt="Assistant" className="w-full h-full object-contain" />
+                <div className="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center text-[10px] font-bold tracking-wide"
+                  style={{ background: 'var(--nav-grad)', border: '1px solid rgba(188,59,51,0.3)', color: '#FBFAF5' }}>
+                  AI
                 </div>
                 <div className="msg-bot-bubble px-4 py-3 min-w-[180px]">
                   {/* Live agent activity — tool/LLM/RAG calls recorded so far */}
@@ -349,19 +347,19 @@ export default function ChatPage() {
           <div className="px-5 pt-1 relative z-[1] animate-fade-up">
             {attachError ? (
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-[11.5px]"
-                style={{ background: 'var(--red-bg)', border: '1px solid rgba(7,102,209,0.22)', color: 'var(--red)' }}>
+                style={{ background: 'var(--red-bg)', border: '1px solid rgba(188,59,51,0.22)', color: 'var(--red)' }}>
                 {attachError}
                 <button onClick={() => setAttachError(null)} className="font-bold hover:opacity-70">✕</button>
               </div>
             ) : attaching ? (
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-[11.5px]"
-                style={{ background: 'rgba(7,102,209,0.07)', border: '1px solid rgba(7,102,209,0.20)', color: 'var(--text-dim)' }}>
+                style={{ background: 'rgba(188,59,51,0.07)', border: '1px solid rgba(188,59,51,0.20)', color: 'var(--text-dim)' }}>
                 <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'var(--gold)' }} />
                 {t('readingDocument')}
               </div>
             ) : (
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-[11.5px] font-semibold"
-                style={{ background: 'rgba(7,102,209,0.08)', border: '1px solid rgba(7,102,209,0.25)', color: 'var(--gold-lo)' }}>
+                style={{ background: 'rgba(188,59,51,0.08)', border: '1px solid rgba(188,59,51,0.25)', color: 'var(--gold-lo)' }}>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                   <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
                 </svg>
@@ -397,14 +395,14 @@ export default function ChatPage() {
 
         {/* Input bar */}
         <div className="px-5 pb-4 pt-2 relative z-[1]">
-          <div className="flex items-center gap-1.5 px-2 py-1 rounded-xl border border-[rgba(15,23,42,0.10)] transition-all focus-within:border-[var(--gold-hi)] focus-within:shadow-[0_0_0_3px_rgba(7,102,209,0.10)]"
+          <div className="flex items-center gap-1.5 px-2 py-1 rounded-xl border border-[rgba(28,25,19,0.10)] transition-all focus-within:border-[var(--gold-hi)] focus-within:shadow-[0_0_0_3px_rgba(188,59,51,0.10)]"
             style={{ background: 'var(--glass-strong)', backdropFilter: 'blur(12px)' }}>
             {/* Attach document */}
             <input ref={fileRef} type="file" className="hidden" onChange={pickFile}
               accept=".pdf,.docx,.txt,.md,.csv,.json,.log,.xml,.html,.yaml,.yml,.sas,.sql,.py" />
             <button onClick={() => fileRef.current?.click()} disabled={attaching}
               title={t('attachTooltip')}
-              className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-all hover:bg-[rgba(7,102,209,0.08)] disabled:opacity-40"
+              className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-all hover:bg-[rgba(188,59,51,0.08)] disabled:opacity-40"
               style={{ color: attachment ? 'var(--gold)' : 'var(--text-dim)' }}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                 <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
@@ -422,7 +420,7 @@ export default function ChatPage() {
 
             <button onClick={() => send()}
               className="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0 hover:scale-105 transition-transform"
-              style={{ background: 'var(--gold-grad)', boxShadow: '0 3px 12px rgba(7,102,209,0.30)' }}>
+              style={{ background: 'var(--gold-grad)', boxShadow: '0 3px 12px rgba(188,59,51,0.30)' }}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
               </svg>

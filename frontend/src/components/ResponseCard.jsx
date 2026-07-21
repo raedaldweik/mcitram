@@ -27,14 +27,14 @@ const markdownComponents = {
   h3: ({node, ...props}) => <h3 className="text-[13px] font-semibold my-1.5" style={{ color: 'var(--gold-lo)' }} {...props} />,
   table: ({node, ...props}) => (
     <div className="my-2 overflow-x-auto">
-      <table className="border-collapse text-[12px] w-full" style={{ border: '1px solid rgba(7,102,209,0.15)' }} {...props} />
+      <table className="border-collapse text-[12px] w-full" style={{ border: '1px solid rgba(188,59,51,0.15)' }} {...props} />
     </div>
   ),
-  thead: ({node, ...props}) => <thead style={{ background: 'rgba(7,102,209,0.06)' }} {...props} />,
-  th: ({node, ...props}) => <th className="px-2 py-1.5 text-left font-semibold" style={{ border: '1px solid rgba(7,102,209,0.15)', color: 'var(--gold)' }} {...props} />,
-  td: ({node, ...props}) => <td className="px-2 py-1.5" style={{ border: '1px solid rgba(7,102,209,0.10)' }} {...props} />,
+  thead: ({node, ...props}) => <thead style={{ background: 'rgba(188,59,51,0.06)' }} {...props} />,
+  th: ({node, ...props}) => <th className="px-2 py-1.5 text-left font-semibold" style={{ border: '1px solid rgba(188,59,51,0.15)', color: 'var(--gold)' }} {...props} />,
+  td: ({node, ...props}) => <td className="px-2 py-1.5" style={{ border: '1px solid rgba(188,59,51,0.10)' }} {...props} />,
   code: ({node, inline, ...props}) => inline
-    ? <code className="px-1 py-0.5 rounded text-[12px]" style={{ background: 'rgba(7,102,209,0.08)', color: 'var(--gold)' }} {...props} />
+    ? <code className="px-1 py-0.5 rounded text-[12px]" style={{ background: 'rgba(188,59,51,0.08)', color: 'var(--gold)' }} {...props} />
     : <code className="block p-2 rounded my-1 text-[12px] overflow-x-auto" style={{ background: 'rgba(0,0,0,0.04)' }} {...props} />,
   blockquote: ({node, ...props}) => <blockquote className="pl-3 my-2 italic" style={{ borderInlineStart: '2px solid var(--gold-lo)', color: 'var(--text-md)' }} {...props} />,
 };
@@ -78,7 +78,7 @@ export default function ResponseCard({ data, onOpenSource, onOpenDetails }) {
             <button key={i} onClick={() => onOpenSource?.(doc)}
               title="Click to view the retrieved passage"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] transition-all cursor-pointer hover:shadow-md hover:-translate-y-[1px]"
-              style={{ color: 'var(--gold-lo)', background: 'rgba(7,102,209,0.06)', border: '1px solid rgba(7,102,209,0.18)' }}>
+              style={{ color: 'var(--gold-lo)', background: 'rgba(188,59,51,0.06)', border: '1px solid rgba(188,59,51,0.18)' }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
               </svg>
@@ -94,7 +94,7 @@ export default function ResponseCard({ data, onOpenSource, onOpenDetails }) {
       <div className="flex items-center gap-3 px-1 text-[10px]" style={{ color: 'var(--text-faint)' }}>
         {onOpenDetails && (
           <button onClick={() => onOpenDetails(data)} title="Details view — tools, LLM calls, retrieval trace"
-            className="p-1 rounded-md transition-all hover:bg-[rgba(7,102,209,0.10)]"
+            className="p-1 rounded-md transition-all hover:bg-[rgba(188,59,51,0.10)]"
             style={{ color: 'var(--text-dim)' }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
