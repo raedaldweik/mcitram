@@ -17,9 +17,10 @@ Al Jahra, Hawalli, Mubarak Al-Kabeer).
 * **Registered model:** `commodity_demand_prediction` — predicts
   `demand_rate`, the share of the full quota entitlement actually collected
   (demand in units = `demand_rate × full_quota_units`)
-* **Training data:** `Commodity_Demand_ABT_v3` (in CAS on the Viya
-  environment; Jan 2019 onward, with Ramadan/Eid/school seasonality
-  features)
+* **Training data:** `Commodity_Demand_ABT_v3` — **bundled into the
+  backend** (4,320 rows, Jan 2019 – Jun 2026, actuals + partition labels)
+  so history is queryable offline; the same table lives in CAS on the Viya
+  environment
 * **Forecast inputs:** `Commodity_Demand_ABT_v3_forecast` — the 12-month
   forecast calendar (576 records = 8 commodities × 6 governorates × 12
   months, Jul 2026 – Jun 2027), **bundled into the backend**
@@ -34,15 +35,27 @@ floor, starting reserve) run through a deterministic reserve engine on top
 of the model baseline — **the exact same math as the Strategic Reserve
 Monitor dashboard**, so the chatbot and the dashboard never disagree.
 
-## The agents (dropdown in the UI)
+## The agent
 
-| Agent | What it does | Backed by |
-|---|---|---|
-| **Commodity Demand Forecast Copilot** | 12-month demand forecasts from the SAS model, strategic-reserve outlooks vs. the policy floor, what-if scenarios, breach months, procurement cost to hold the floor, live single-record scoring | `backend/commodity/` (bundled forecast calendar + MAS scoring + reserve engine) plus a subset of the Viya toolset |
-| **SAS Viya Copilot** | Explore the environment, query the ABT, run SAS code, build models with AutoML, real-time scoring — orchestrating five specialist sub-agents | SAS Viya environment via the vendored Viya MCP toolset (`backend/sasviya/`) |
-| **Global Intelligence** | Commodity markets, food-security policy, strategic-reserve practice worldwide, news monitoring with cited sources | Tavily web search (`backend/websearch/`) |
+One agent: the **Commodity Demand Forecast Copilot** — 12-month demand
+forecasts from the SAS model, strategic-reserve outlooks vs. the policy
+floor, what-if scenarios, breach months, procurement cost to hold the
+floor, historical demand analysis, and live single-record scoring. Backed
+by `backend/commodity/` (bundled ABT + forecast calendar + MAS scoring +
+reserve engine) plus a subset of the vendored Viya MCP toolset
+(`query_table`, model listing, raw `score_data`) for live environment
+dives.
 
-Everything an agent does is visible: live activity while it works, and a full
+### Forecast model vs. SAS model — the distinction
+
+`commodity_demand_prediction` is a **prediction** model: one record in
+(commodity, governorate, month features), one `demand_rate` out. There is
+no separate forecasting model — the "forecast" is that prediction model
+applied across the 576 future calendar records. The forecast Excel
+contains **inputs only** (no predictions, no model); the reserve outlook
+is deterministic math on top of the model's output.
+
+Everything the agent does is visible: live activity while it works, and a full
 tool/LLM trace per answer (the grid icon under each response). Charts the
 agents emit (`render_chart`) render as interactive SVG cards.
 
@@ -63,6 +76,7 @@ instructed to say clearly which one the user is looking at.
 | `get_demand_forecast` | Scores the forecast calendar against `commodity_demand_prediction` (cached after the first run); aggregates by month / commodity / governorate with the 80% band |
 | `reserve_outlook` | The dashboard's scenario engine: reserve trajectory vs. policy floor, cover, breach month (expected + worst-case), top-up quantity and cost to hold the floor |
 | `score_scenario_record` | ONE live MAS call with the raw exchange (module id, inputs, outputs) — shows the actual SAS scoring behind the forecast; supports input overrides |
+| `query_history` | The full training ABT (Commodity_Demand_ABT_v3, Jan 2019 – Jun 2026, 4,320 rows with actuals + Train/Validate/Test labels) bundled from the Excel — filter/aggregate with no SAS connection |
 | `get_forecast_inputs` | Inspect the bundled input records that get scored |
 
 The agent also carries `query_table`, `list_registered_models`,
@@ -76,9 +90,8 @@ frontend/  React + Vite + Tailwind
 backend/   FastAPI
   ├─ agents/      agent definitions + system prompts (registry.py, prompts.py)
   ├─ services/    the agentic loop (runner.py) + in-memory sessions (store.py)
-  ├─ commodity/   THE use case — bundled forecast calendar + MAS scoring + reserve engine
+  ├─ commodity/   THE use case — bundled ABT + forecast calendar + MAS scoring + reserve engine
   ├─ sasviya/     SAS Viya toolset — vendored from sas-mcp-server (Apache-2.0)
-  ├─ websearch/   Tavily tools
   └─ toolset.py   shared tool registry + render_chart
 ```
 
@@ -101,8 +114,7 @@ backend/   FastAPI
    | Variable | Purpose |
    |---|---|
    | `ANTHROPIC_API_KEY` | The LLM. Only hard requirement to boot. |
-   | `VIYA_ENDPOINT` + `VIYA_REFRESH_TOKEN` (or `VIYA_USERNAME`/`VIYA_PASSWORD`) | Live model scoring + the SAS Viya Copilot |
-   | `TAVILY_API_KEY` | Global Intelligence agent |
+   | `VIYA_ENDPOINT` + `VIYA_REFRESH_TOKEN` (or `VIYA_USERNAME`/`VIYA_PASSWORD`) | Live model scoring + the Viya tools |
 
    Useful optional ones: `COMMODITY_MODULE_ID` (default
    `commodity_demand_prediction` — set it if the MAS module was published
@@ -110,9 +122,9 @@ backend/   FastAPI
    modules), `SSL_VERIFY=false` for self-signed certs, `LLM_EFFORT`,
    `MODEL`. Full list: [`backend/.env.example`](backend/.env.example).
 
-3. Without Viya configured the commodity agent still demos end-to-end on the
-   bundled offline sample (clearly labeled); the Viya Copilot explains it is
-   not configured.
+3. Without Viya configured the agent still demos end-to-end: history and
+   forecast inputs are fully bundled, and forecasts fall back to the bundled
+   offline sample rates (clearly labeled `offline_sample`).
 
 ### Getting a Viya refresh token
 
@@ -146,11 +158,10 @@ npm run dev            # http://localhost:5173, proxies /api to :8000
   chart.
 * **What-if** — "Demand surges 20% during Ramadan and a third of deliveries
   are delayed — when do we breach, and what does it cost to hold the floor?"
+* **History** — "How did rice demand behave during past Ramadans in the
+  training data?" → bundled ABT, no SAS needed.
 * **Show the plumbing** — "Score one record live against the SAS model and
   show me the raw call" → module id, inputs, outputs on screen.
-* **Viya Copilot** — "Profile Commodity_Demand_ABT_v3 — what drives
-  demand_rate?" · **Global Intelligence** — "What's happening in global rice
-  markets this month?"
 
 ## Vendored code & licenses
 

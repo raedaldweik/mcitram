@@ -50,17 +50,31 @@ async def get_use_case():
         "model": {
             "project": "commodity demand forecasting",
             "registered_model": "commodity_demand_prediction",
-            "trained_on": "Commodity_Demand_ABT_v3 (in CAS on the SAS Viya "
-                          "environment; target variable demand_rate)",
+            "kind": "PREDICTION model — given one record (commodity, "
+                    "governorate, month features) it predicts demand_rate. "
+                    "The 'forecast' is not a separate model: it is this "
+                    "prediction model applied across the 12 future calendar "
+                    "months.",
+            "trained_on": "Commodity_Demand_ABT_v3 — target demand_rate; "
+                          "bundled with this app for offline querying "
+                          "(query_history) and also in CAS on the Viya "
+                          "environment",
             "scored_via": "SAS Micro Analytic Score (MAS) REST — the same "
                           "real-time scoring the Viya MCP toolset's score_data "
                           "tool uses",
             "forecast_inputs": "Commodity_Demand_ABT_v3_forecast calendar, "
                                "bundled with this app (576 records = 8 "
-                               "commodities × 6 governorates × 12 months)",
+                               "commodities × 6 governorates × 12 months). "
+                               "Inputs only — it contains no predictions; the "
+                               "model supplies demand_rate.",
             "prediction": "demand_rate — the share of the full quota "
                           "entitlement actually collected; demand_units = "
                           "demand_rate × full_quota_units",
+        },
+        "history": {
+            "table": "Commodity_Demand_ABT_v3 (bundled, query with query_history)",
+            "coverage": "2019-01-01 to 2026-06-01 (4,320 rows, actuals)",
+            "partitions": {"Train": 2880, "Validate": 864, "Test": 576},
         },
         "forecast_horizon": _HORIZON,
         "commodities": D.commodities(),
@@ -254,6 +268,119 @@ async def score_scenario_record(commodity: str, governorate: str, month: str,
         result["demand_units"] = round(
             result["demand_rate"] * float(record["full_quota_units"]), 1)
     return result
+
+
+@commodity.add(
+    "query_history",
+    "Query the historical training data (Commodity_Demand_ABT_v3, bundled "
+    "from the Excel the model was trained on — Jan 2019 to Jun 2026, 4,320 "
+    "rows with ACTUAL demand_rate/demand_units and Train/Validate/Test "
+    "partition labels). Works fully offline, no SAS connection needed. "
+    "Filter by commodity/governorate/date range/Ramadan, then aggregate "
+    "with group_by. Each group returns: rows, avg_demand_rate, "
+    "effective_rate (Σ demand_units ÷ Σ full_quota_units), "
+    "total_demand_units, total_full_quota_units. Set raw=true for "
+    "individual rows instead (capped by limit). Great for seasonality "
+    "questions ('how did rice behave in past Ramadans?') and comparing "
+    "history to the forecast.",
+    {"type": "object",
+     "properties": {
+         "commodity": {"type": "string", "description": "Optional commodity code or name."},
+         "governorate": {"type": "string", "description": "Optional governorate."},
+         "date_from": {"type": "string", "description": "Optional start month YYYY-MM-DD (inclusive)."},
+         "date_to": {"type": "string", "description": "Optional end month YYYY-MM-DD (inclusive)."},
+         "ramadan_only": {"type": "boolean", "description": "Keep only months with ramadan_share > 0."},
+         "partition": {"type": "string", "enum": ["Train", "Validate", "Test"],
+                       "description": "Optional partition filter."},
+         "group_by": {"type": "array", "items": {
+                          "type": "string",
+                          "enum": ["month", "year", "month_num", "commodity",
+                                   "governorate", "partition", "ramadan"]},
+                      "description": "Aggregation keys (default ['month'] — one row per month)."},
+         "raw": {"type": "boolean", "description": "Return raw rows instead of aggregates (default false)."},
+         "limit": {"type": "integer", "description": "Max result rows (default 60, raw default 24)."}},
+     },
+)
+async def query_history(commodity: Optional[str] = None,
+                        governorate: Optional[str] = None,
+                        date_from: Optional[str] = None,
+                        date_to: Optional[str] = None,
+                        ramadan_only: bool = False,
+                        partition: Optional[str] = None,
+                        group_by: Optional[list] = None,
+                        raw: bool = False, limit: Optional[int] = None):
+    code = D.resolve_commodity(commodity) if commodity else None
+    gov = D.resolve_governorate(governorate) if governorate else None
+    lo = (date_from or "").strip()[:10] or None
+    hi = (date_to or "").strip()[:10] or None
+    rows = [r for r in D.history_rows()
+            if (code is None or r["commodity_code"] == code)
+            and (gov is None or r["governorate"] == gov)
+            and (lo is None or r["month"] >= lo)
+            and (hi is None or r["month"] <= hi)
+            and (not ramadan_only or r["ramadan_share"] > 0)
+            and (partition is None or r["partition_label"] == partition)]
+    if not rows:
+        raise ToolError("No history rows match that filter (history covers "
+                        f"{D.history_rows()[0]['month']} to "
+                        f"{D.history_rows()[-1]['month']}).")
+    filt = {"commodity": code, "governorate": gov, "date_from": lo,
+            "date_to": hi, "ramadan_only": ramadan_only, "partition": partition}
+
+    if raw:
+        cap = max(1, limit or 24)
+        return {"source": "bundled_training_abt", "filter": filt,
+                "total_matching": len(rows), "returned": min(len(rows), cap),
+                "rows": rows[:cap]}
+
+    keys = [k for k in (group_by or ["month"])
+            if k in ("month", "year", "month_num", "commodity", "governorate",
+                     "partition", "ramadan")] or ["month"]
+
+    def key_of(r):
+        parts = []
+        for k in keys:
+            if k == "month":
+                parts.append(r["month"])
+            elif k == "year":
+                parts.append(r["month"][:4])
+            elif k == "month_num":
+                parts.append(r["month_num"])
+            elif k == "commodity":
+                parts.append(r["commodity_code"])
+            elif k == "governorate":
+                parts.append(r["governorate"])
+            elif k == "partition":
+                parts.append(r["partition_label"])
+            elif k == "ramadan":
+                parts.append("ramadan" if r["ramadan_share"] > 0 else "non_ramadan")
+        return tuple(parts)
+
+    agg: dict = {}
+    for r in rows:
+        a = agg.setdefault(key_of(r), {"rows": 0, "rate_sum": 0.0,
+                                       "demand": 0.0, "quota": 0.0})
+        a["rows"] += 1
+        a["rate_sum"] += r["demand_rate"]
+        a["demand"] += r["demand_units"]
+        a["quota"] += r["full_quota_units"]
+
+    out = []
+    for k in sorted(agg.keys(),
+                    key=lambda t: tuple(f"{x:04d}" if isinstance(x, int) else str(x)
+                                        for x in t)):
+        a = agg[k]
+        rec = dict(zip(keys, k))
+        rec.update({"rows": a["rows"],
+                    "avg_demand_rate": round(a["rate_sum"] / a["rows"], 4),
+                    "effective_rate": round(a["demand"] / a["quota"], 4) if a["quota"] else None,
+                    "total_demand_units": round(a["demand"], 1),
+                    "total_full_quota_units": round(a["quota"], 1)})
+        out.append(rec)
+    cap = max(1, limit or 60)
+    return {"source": "bundled_training_abt", "filter": filt,
+            "group_by": keys, "total_groups": len(out),
+            "returned": min(len(out), cap), "rows": out[:cap]}
 
 
 @commodity.add(

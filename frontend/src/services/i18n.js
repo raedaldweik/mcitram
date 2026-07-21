@@ -18,8 +18,8 @@ const STR = {
   delete: { en: 'Delete', ar: 'حذف' },
 
   welcome: {
-    en: 'Welcome to the MCIT Commodity Demand Copilot. Pick an agent from the dropdown above — the Commodity Demand Forecast Copilot, the SAS Viya Copilot, or Global Intelligence — and ask away.',
-    ar: 'مرحباً بك في مساعد توقعات الطلب على السلع. اختر وكيلاً من القائمة أعلاه — مساعد توقعات الطلب على السلع، مساعد SAS Viya، أو الاستخبارات العالمية — واسأل ما تشاء.',
+    en: 'Welcome to the MCIT Commodity Demand Copilot — demand forecasts from the SAS model, strategic-reserve outlooks, what-if scenarios, and the full demand history. Ask away.',
+    ar: 'مرحباً بك في مساعد توقعات الطلب على السلع — توقعات الطلب من نموذج SAS، ومسار الاحتياطي الاستراتيجي، وسيناريوهات ماذا-لو، وسجل الطلب الكامل. اسأل ما تشاء.',
   },
 
   selectAgent: { en: 'Select an agent', ar: 'اختر وكيلاً' },

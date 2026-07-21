@@ -4,8 +4,13 @@
   • forecast_rows — the Commodity_Demand_ABT_v3_forecast calendar (576 rows:
     8 commodities × 6 governorates × 12 months, Jul 2026 – Jun 2027). These
     are the exact input records scored against the registered SAS model
-    `commodity_demand_prediction`; the ABT the model was trained on
-    (Commodity_Demand_ABT_v3) lives in CAS on the Viya environment.
+    `commodity_demand_prediction`. Note: the forecast file holds only model
+    INPUTS — no demand_rate — the model supplies the predictions.
+  • history_rows — the full training ABT Commodity_Demand_ABT_v3 (4,320
+    rows, Jan 2019 – Jun 2026, with actual demand_rate/demand_units and the
+    Train/Validate/Test partition labels), bundled from the same Excel the
+    model was trained on so the agent can query history with no SAS
+    connection. The same table also lives in CAS on the Viya environment.
   • supply_policy — per-commodity baseline deliveries, lead times, starting
     reserve and the policy minimum-cover floor (same figures the Strategic
     Reserve Monitor dashboard uses).
@@ -31,6 +36,10 @@ def bundle() -> dict:
 
 def forecast_rows() -> list[dict]:
     return bundle()["forecast_rows"]
+
+
+def history_rows() -> list[dict]:
+    return bundle()["history_rows"]
 
 
 def calendar() -> list[dict]:

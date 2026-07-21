@@ -1,12 +1,12 @@
 """
 MCITRAM — MCIT Kuwait Commodity Demand Copilot — FastAPI backend.
 
-Three agents over one chat UI:
+One agent over one chat UI:
   • Commodity Demand Forecast Copilot — the registered SAS model
-    commodity_demand_prediction scored live on SAS Viya (MAS), plus the
-    strategic-reserve scenario engine
-  • SAS Viya Copilot          — SAS Viya MCP toolset + specialist sub-agents
-  • Global Intelligence       — Tavily news/web search
+    commodity_demand_prediction scored live on SAS Viya (MAS), the bundled
+    training ABT + forecast calendar, and the strategic-reserve scenario
+    engine (plus a subset of the vendored Viya MCP toolset for live
+    environment dives)
 
 Local dev:
     uvicorn main:app --reload --port 8000
@@ -34,7 +34,6 @@ logging.basicConfig(level=logging.INFO,
 
 from routers import chat as chat_router          # noqa: E402
 import sasviya.config as viya_config             # noqa: E402
-import websearch.config as web_config            # noqa: E402
 import commodity.data as commodity_data          # noqa: E402
 import commodity.scoring as commodity_scoring    # noqa: E402
 from services import runner                      # noqa: E402
@@ -62,9 +61,9 @@ app.include_router(chat_router.router)
 print(f"✓ LLM: {runner.MODEL} ({'key set' if runner.llm_configured() else 'ANTHROPIC_API_KEY MISSING'})")
 print(f"✓ SAS Viya: {viya_config.VIYA_ENDPOINT or '(not configured)'}")
 print(f"✓ Commodity model: MAS module '{commodity_scoring.MODULE_ID}' "
-      f"({len(commodity_data.forecast_rows())} bundled forecast records"
+      f"({len(commodity_data.forecast_rows())} bundled forecast records, "
+      f"{len(commodity_data.history_rows())} bundled history rows"
       f"{'' if viya_config.VIYA_ENDPOINT else ' — offline sample mode'})")
-print(f"✓ Tavily web search: {'key set' if web_config.configured() else '(not configured)'}")
 
 # ─── Static frontend ─────────────────────────────────────────────────
 FRONTEND_DIST = os.path.abspath(os.path.join(

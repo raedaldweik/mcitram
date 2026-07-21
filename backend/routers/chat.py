@@ -14,7 +14,6 @@ from pydantic import BaseModel
 
 import sasviya.config as viya_config
 import commodity.scoring as commodity_scoring
-import websearch.config as web_config
 from agents import registry
 from services import images, runner, store
 
@@ -51,7 +50,6 @@ async def health():
             "commodity_model": (f"MAS module '{commodity_scoring.MODULE_ID}'"
                                 if viya_config.configured()
                                 else "offline sample mode"),
-            "tavily": "configured" if web_config.configured() else "not configured",
         },
     }
 
