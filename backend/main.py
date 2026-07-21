@@ -58,6 +58,14 @@ app.add_middleware(
 
 app.include_router(chat_router.router)
 
+
+@app.on_event("startup")
+async def _warm_model_baseline():
+    # Score the 576-record forecast calendar in the background at boot so
+    # the first forecast question in a demo answers instantly.
+    import asyncio
+    asyncio.create_task(commodity_scoring.warm_baseline())
+
 print(f"✓ LLM: {runner.MODEL} ({'key set' if runner.llm_configured() else 'ANTHROPIC_API_KEY MISSING'})")
 print(f"✓ SAS Viya: {viya_config.VIYA_ENDPOINT or '(not configured)'}")
 print(f"✓ Commodity model: MAS module '{commodity_scoring.MODULE_ID}' "

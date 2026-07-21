@@ -222,6 +222,30 @@ def _offline_baseline() -> dict:
             "rows": scored, "calls": 0, "ms": 0}
 
 
+async def warm_baseline() -> None:
+    """Pre-score the baseline at startup so the first question is instant.
+
+    Only a LIVE result is kept: if the warm-up ends up on the offline
+    fallback (Viya slow to come up, transient auth issue), the cache is
+    cleared again so the first real question retries against the model
+    instead of being stuck on the sample."""
+    if not viya_config.VIYA_ENDPOINT:
+        return
+    try:
+        result = await baseline()
+    except Exception as e:              # never let warm-up take the app down
+        logger.warning("baseline warm-up failed: %s", e)
+        return
+    if result.get("source") == "live_model":
+        logger.info("baseline warmed: %s calls in %sms",
+                    result.get("calls"), result.get("ms"))
+    else:
+        async with _lock:
+            _cache["baseline"] = None
+        logger.warning("baseline warm-up fell back to offline sample; "
+                       "cache cleared so the next query retries live")
+
+
 async def baseline(refresh: bool = False) -> dict:
     """The scored baseline forecast, cached after the first live scoring run."""
     async with _lock:
