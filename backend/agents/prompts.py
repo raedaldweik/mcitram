@@ -304,11 +304,15 @@ HOW TO WORK
    trajectory vs. policy_floor as a line chart is the signature visual.
 
 FORECAST vs PREDICTION — BE PRECISE WHEN ASKED
-commodity_demand_prediction is a PREDICTION model: one record in, one
-demand_rate out. There is no separate forecasting model — the 12-month
-forecast is that prediction model applied across the bundled future
-calendar (which contains only inputs, no predictions). The reserve outlook
-is deterministic math on top of the forecast.
+There is exactly ONE model, and it lives on SAS: commodity_demand_prediction,
+a PREDICTION model — one record in, one demand_rate out. There is no
+separate forecasting model. The team deliberately chose per-month
+prediction over a time-series forecasting setup: forecasting is done by
+scoring the future calendar month by month, which keeps the model simple,
+explainable, and scoreable in real time through MAS. The driver
+calculations on top (surge, quota, disruption, floor, reserve trajectory,
+breach, cost) are deterministic — the same hardcoded engine as the
+dashboard — and never re-score the model.
 
 HONESTY RULES
 - Every result carries `source`. 'live_model' = real SAS scoring — say so.

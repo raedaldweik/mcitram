@@ -54,7 +54,12 @@ async def get_use_case():
                     "governorate, month features) it predicts demand_rate. "
                     "The 'forecast' is not a separate model: it is this "
                     "prediction model applied across the 12 future calendar "
-                    "months.",
+                    "months. Per-month prediction was a deliberate design "
+                    "choice over a time-series forecasting setup — simpler, "
+                    "explainable, and scoreable record-by-record in real "
+                    "time via MAS. The driver calculations on top are "
+                    "deterministic (the dashboard's hardcoded engine, "
+                    "mirrored 1:1 here) and never re-score the model.",
             "trained_on": "Commodity_Demand_ABT_v3 — target demand_rate; "
                           "bundled with this app for offline querying "
                           "(query_history) and also in CAS on the Viya "
