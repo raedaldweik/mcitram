@@ -126,6 +126,16 @@ def scenario(rows: list[dict], code: str,
                                         else months[breach_early]),
             "holds_all_year": breach is None,
         },
+        # Same flag rules as the dashboard's KPI cards
+        "status": {
+            "cover": ("ok" if min_cover >= min_cover_months else
+                      "warning" if min_cover >= min_cover_months - 1 else
+                      "alarm"),
+            "reserve": "ok" if breach is None else "alarm",
+            "worst_case_is_earlier": (breach is not None
+                                      and breach_early is not None
+                                      and breach_early < breach),
+        },
         "cost": {
             "price_per_unit_usd": price,
             "price_is_editable_assumption": True,

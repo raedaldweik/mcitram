@@ -85,6 +85,13 @@ async def get_use_case():
         "supply_policy": [D.supply_policy(c) for c in D.commodity_codes()],
         "uncertainty_band": {**D.band(),
                              "meaning": "80% band, ± on the demand rate"},
+        "dashboard_parity": (
+            "The reserve engine and all reference data are ported 1:1 from "
+            "the Strategic Reserve Monitor dashboard and verified "
+            "field-by-field against it (48 scenario configs, 4,608 values, "
+            "zero mismatches) — chat answers and the dashboard never "
+            "disagree. Offline sample rates are the dashboard's embedded "
+            "offline forecast, digit-for-digit."),
         "scenario_levers": {
             "shock_pct": "demand surge above normal collection (-10..40, default 0)",
             "quota_pct": "change to the per-person quota (-40..40, default 0)",

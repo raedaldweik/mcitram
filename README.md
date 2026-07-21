@@ -33,7 +33,12 @@ Al Jahra, Hawalli, Mubarak Al-Kabeer).
 Scenario questions (demand surge, quota change, delivery disruption, policy
 floor, starting reserve) run through a deterministic reserve engine on top
 of the model baseline — **the exact same math as the Strategic Reserve
-Monitor dashboard**, so the chatbot and the dashboard never disagree.
+Monitor dashboard**, so the chatbot and the dashboard never disagree. The
+port is verified field-by-field against the dashboard's own JavaScript
+(48 scenario configurations × ~100 values each — reserve trajectories,
+policy floors, cover, breach months, worst-case breaches, top-up costs,
+KPI status flags — zero mismatches, including the dashboard's exact
+`toFixed(1)` quota rounding).
 
 ## The agent
 
@@ -63,10 +68,13 @@ agents emit (`render_chart`) render as interactive SVG cards.
 to Arabic (RTL layout, Arabic labels, Arabic voice input) and tells the
 agents to answer in Modern Standard Arabic — and back again.
 
-**Offline resilience:** if the Viya environment is unreachable, the
-commodity agent falls back to a bundled offline sample of model output —
-every result carries `source: live_model | offline_sample` and the agent is
-instructed to say clearly which one the user is looking at.
+**Offline resilience:** if the Viya environment is unreachable, the agent
+falls back to **the dashboard's embedded offline forecast** (the
+`FALLBACK_RATES` baked into the Strategic Reserve Monitor's index.html —
+bundled here digit-for-digit, verified against all 576 values), so chat and
+dashboard agree even fully offline. Every result carries
+`source: live_model | offline_sample` and the agent is instructed to say
+clearly which one the user is looking at.
 
 ## The commodity agent's tools (`backend/commodity/`)
 

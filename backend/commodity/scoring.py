@@ -183,13 +183,26 @@ async def _score_all_rows() -> dict:
     scored = []
     for row, rate in zip(rows, rates):
         r = dict(row)
-        r["demand_rate"] = round(float(rate), 5)
-        r["demand_units"] = round(float(rate) * row["full_quota_units"], 1)
+        r["demand_rate"] = float(rate)
+        r["demand_units"] = float(rate) * row["full_quota_units"]
         r["month_idx"] = month_idx[row["month"]]
         scored.append(r)
     return {"source": "live_model", "module_id": module.module_id,
             "rows": scored, "calls": len(rows),
             "ms": int((time.monotonic() - t0) * 1000)}
+
+
+def _js_round1(x: float) -> float:
+    """JavaScript's (x).toFixed(1) for positive x — round half AWAY from zero.
+
+    The dashboard derives full_quota_units as +(quota*pop).toFixed(1), while
+    the forecast Excel was written with Python's round-half-to-even; 30 of
+    576 rows differ by exactly 0.1. The offline fallback must reproduce the
+    dashboard's offline preview digit-for-digit, so it re-derives the quota
+    the dashboard's way. (Live scoring still sends the official Excel
+    full_quota_units to the model.)"""
+    import math
+    return math.floor(x * 10 + 0.5) / 10
 
 
 def _offline_baseline() -> dict:
@@ -199,8 +212,10 @@ def _offline_baseline() -> dict:
         mi = month_idx[row["month"]]
         rate = D.fallback_rate(row["commodity_code"], row["governorate"], mi)
         r = dict(row)
+        r["full_quota_units"] = _js_round1(
+            row["quota_per_person"] * row["registered_population"])
         r["demand_rate"] = rate
-        r["demand_units"] = round(rate * row["full_quota_units"], 1)
+        r["demand_units"] = rate * r["full_quota_units"]
         r["month_idx"] = mi
         scored.append(r)
     return {"source": "offline_sample", "module_id": None,

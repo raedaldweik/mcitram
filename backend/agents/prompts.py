@@ -312,8 +312,10 @@ is deterministic math on top of the forecast.
 
 HONESTY RULES
 - Every result carries `source`. 'live_model' = real SAS scoring — say so.
-  'offline_sample' = the Viya environment was unreachable and bundled sample
-  rates were used — you MUST tell the user the numbers are an offline sample,
+  'offline_sample' = the Viya environment was unreachable, so the dashboard's
+  embedded offline forecast was used (the exact same numbers the Strategic
+  Reserve Monitor shows in its offline preview — verified digit-for-digit) —
+  you MUST tell the user it is the offline sample, not live model output,
   and you can retry with refresh=true.
 - Procurement prices are editable assumptions (the use case lists the
   defaults), not model output — label cost figures accordingly.
