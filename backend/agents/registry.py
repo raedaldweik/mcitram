@@ -1,4 +1,4 @@
-"""The SAS demo agent line-up and the SAS Copilot's specialist sub-agents.
+"""The MCITRAM agent line-up and the SAS Copilot's specialist sub-agents.
 
 Each agent is a system prompt + one or more toolsets (optionally a subset of
 each). The SAS Viya Copilot additionally carries a specialist roster the
@@ -12,10 +12,8 @@ from typing import Optional
 
 from sasviya.tools import viya
 from sasva.tools import va
-from sasvi.tools import vi
 from websearch.tools import web, sasdocs
-from usecase.tools import procurement
-from frontline.tools import frontline
+from commodity.tools import commodity
 from toolset import ToolSet, charts
 
 from . import prompts
@@ -102,9 +100,39 @@ SPECIALISTS = {
 }
 
 
-# ── The four public agents ──────────────────────────────────────────
+# ── The public agents ───────────────────────────────────────────────
 
 AGENTS: dict[str, AgentDef] = {
+    "commodity-forecast": AgentDef(
+        id="commodity-forecast",
+        name="Commodity Demand Forecast Copilot",
+        description="MCIT Kuwait's commodity copilot — 12-month demand "
+                    "forecasts from the SAS model commodity_demand_prediction "
+                    "(scored live on SAS Viya), strategic-reserve outlooks "
+                    "vs. the policy floor, what-if scenarios, and procurement "
+                    "cost to hold the floor.",
+        system=prompts.COMMODITY_AGENT,
+        toolsets=[(commodity, None),
+                  (viya, ["query_table", "list_castables",
+                          "get_castable_columns", "get_castable_data",
+                          "list_registered_models",
+                          "list_models_and_decisions", "score_data"]),
+                  (charts, None)],
+        max_iters=14,
+        suggestions={
+            "en": [
+                "What does the model forecast for rice demand over the next 12 months?",
+                "Will the frozen chicken reserve hold above the 3-month policy floor all year?",
+                "What if demand surges 20% during Ramadan and a third of deliveries are delayed?",
+                "Score one record live against the SAS model and show me the raw call.",
+            ],
+            "ar": [
+                "ما توقعات النموذج للطلب على الأرز خلال الاثني عشر شهراً القادمة؟",
+                "هل يبقى احتياطي الدجاج المجمد فوق حد الثلاثة أشهر طوال العام؟",
+                "ماذا لو ارتفع الطلب 20٪ في رمضان وتأخر ثلث الشحنات؟",
+                "احسب سجلاً واحداً مباشرة عبر نموذج SAS وأرني الاستدعاء الفعلي.",
+            ],
+        }),
     "sas-copilot": AgentDef(
         id="sas-copilot",
         name="SAS Viya Copilot",
@@ -118,59 +146,15 @@ AGENTS: dict[str, AgentDef] = {
         suggestions={
             "en": [
                 "What data do we have? Give me a quick tour of the environment.",
-                "Generate a 5,000-row synthetic dataset for a supplier-risk demo, then profile it.",
-                "Build a model with AutoML on that table and score one record in real time.",
-                "Show me the procurement dashboard and analyze it.",
+                "Profile the Commodity_Demand_ABT_v3 table — what drives demand_rate?",
+                "List the registered models and score one record against commodity_demand_prediction.",
+                "Query average demand_rate by commodity during Ramadan months.",
             ],
             "ar": [
                 "ما البيانات المتوفرة لدينا؟ قدّم لي جولة سريعة في البيئة.",
-                "أنشئ بيانات اصطناعية من 5000 صف لعرض مخاطر الموردين ثم حلّلها.",
-                "ابنِ نموذجاً بالتعلّم الآلي على ذلك الجدول واحسب درجة سجل واحد فورياً.",
-                "اعرض لوحة معلومات المشتريات وحلّلها.",
-            ],
-        }),
-    "vi-investigator": AgentDef(
-        id="vi-investigator",
-        name="Investigation Assistant (Visual Investigator)",
-        description="Triage copilot for SAS Visual Investigator — work the alert "
-                    "queue, explain detections, flag false positives, recommend actions.",
-        system=prompts.VI_AGENT,
-        toolsets=[(vi, None), (charts, None)],
-        max_iters=14,
-        suggestions={
-            "en": [
-                "What should I look at first today?",
-                "Triage the highest-priority alert — why did it fire?",
-                "Could this alert be a false positive? Walk me through the evidence.",
-                "Who is connected to this supplier, and through what?",
-            ],
-            "ar": [
-                "بماذا أبدأ اليوم؟",
-                "افرز التنبيه الأعلى أولوية — لماذا انطلق؟",
-                "هل يمكن أن يكون هذا التنبيه إنذاراً كاذباً؟ اشرح لي الأدلة.",
-                "من يرتبط بهذا المورد وبأي روابط؟",
-            ],
-        }),
-    "procurement-analyst": AgentDef(
-        id="procurement-analyst",
-        name="Procurement Integrity Analyst",
-        description="Use-case agent over government procurement data — tenders, "
-                    "suppliers, invoices, red-flag alerts, and ready risk models.",
-        system=prompts.PROCUREMENT_AGENT,
-        toolsets=[(procurement, None), (charts, None)],
-        max_iters=12,
-        suggestions={
-            "en": [
-                "Who are our riskiest suppliers right now?",
-                "Run the bid-rigging screen on IT tenders.",
-                "How much are we overpaying versus market prices?",
-                "Any purchases split to stay under the approval threshold?",
-            ],
-            "ar": [
-                "من هم الموردون الأعلى خطورة حالياً؟",
-                "شغّل فحص التواطؤ في عطاءات تقنية المعلومات.",
-                "كم ندفع زيادة عن أسعار السوق؟",
-                "هل هناك مشتريات مجزّأة للبقاء تحت حد الاعتماد؟",
+                "حلّل جدول Commodity_Demand_ABT_v3 — ما الذي يحرك معدل الطلب؟",
+                "اعرض النماذج المسجّلة واحسب سجلاً واحداً عبر commodity_demand_prediction.",
+                "استعلم عن متوسط معدل الطلب حسب السلعة في أشهر رمضان.",
             ],
         }),
     "global-intel": AgentDef(
@@ -183,92 +167,19 @@ AGENTS: dict[str, AgentDef] = {
         max_iters=12,
         suggestions={
             "en": [
-                "What are other countries doing on AI-driven procurement oversight?",
-                "What changed in agentic AI this month?",
-                "Best practice for supplier risk monitoring — summarize with sources.",
-                "How are governments using AI copilots? Give examples, with sources.",
+                "What's happening in global rice and poultry markets this month?",
+                "How do other countries run strategic food reserves? Summarize with sources.",
+                "Any supply-chain disruptions that could affect Gulf food imports?",
+                "How are governments using AI for food security? Give examples, with sources.",
             ],
             "ar": [
-                "ماذا تفعل الدول الأخرى في الرقابة على المشتريات بالذكاء الاصطناعي؟",
-                "ما الجديد في الذكاء الاصطناعي الوكيل هذا الشهر؟",
-                "لخّص أفضل الممارسات في مراقبة مخاطر الموردين مع المصادر.",
-                "كيف تستخدم الحكومات المساعدات الذكية؟ أعطني أمثلة مع المصادر.",
+                "ما الجديد في أسواق الأرز والدواجن العالمية هذا الشهر؟",
+                "كيف تدير الدول الأخرى الاحتياطيات الغذائية الاستراتيجية؟ لخّص مع المصادر.",
+                "هل هناك اضطرابات في سلاسل الإمداد قد تؤثر على واردات الغذاء الخليجية؟",
+                "كيف تستخدم الحكومات الذكاء الاصطناعي للأمن الغذائي؟ أعطني أمثلة مع المصادر.",
             ],
         }),
 }
-
-
-# ── Frontline Assist (social benefits) ──────────────────────────────
-
-_INTEGRATIONS = ["get_beneficiary_profile", "check_icp", "check_mohre",
-                 "check_gpssa", "check_card_status", "check_utility"]
-
-FRONTLINE_SPECIALISTS = {
-    "knowledge_decision": AgentDef(
-        id="knowledge_decision", name="Knowledge & Decision AI Agent",
-        description="Analytical backbone — verifies facts across the integrations and runs the deterministic Smart Form engine; evidence-based reports.",
-        system=prompts.KNOWLEDGE_DECISION,
-        toolsets=[(frontline, _INTEGRATIONS + ["evaluate_complaint"])],
-        max_iters=10),
-    "document_processing": AgentDef(
-        id="document_processing", name="Document Processing AI Agent",
-        description="Shared document service — submits uploads to the existing document-intelligence module (IDP) and consumes confidence scores, extracted fields, and rejection reasons.",
-        system=prompts.DOCUMENT_PROCESSING,
-        toolsets=[(frontline, ["submit_document_to_idp"])],
-        max_iters=6),
-}
-
-AGENTS["customer-resolution"] = AgentDef(
-    id="customer-resolution",
-    name="Customer Resolution Agent",
-    description="Frontline Assist — resolves Inflation Allowance and SWP "
-                "complaints end to end: real-time integration checks, a "
-                "deterministic Smart Form decision engine (eight outcomes), "
-                "and an AI-document fallback when systems are unavailable.",
-    system=prompts.CUSTOMER_RESOLUTION,
-    toolsets=[(frontline, None), (charts, None)],
-    specialists=FRONTLINE_SPECIALISTS,
-    max_iters=14,
-    suggestions={
-        "en": [
-            "I didn't receive my Inflation Allowance this month. My Emirates ID is 784-1990-7654321-3.",
-            "My payment card never arrived — ID 784-1978-1122334-5.",
-            "Why was my application rejected? ID 784-1995-4455667-8.",
-            "The allowance amount looks wrong this month — ID 784-1969-9988776-1.",
-        ],
-        "ar": [
-            "لم أستلم علاوة التضخم هذا الشهر. رقم هويتي 784-1990-7654321-3.",
-            "بطاقة الدفع لم تصلني — الهوية 784-1978-1122334-5.",
-            "لماذا رُفض طلبي؟ الهوية 784-1995-4455667-8.",
-            "مبلغ العلاوة يبدو خاطئاً هذا الشهر — الهوية 784-1969-9988776-1.",
-        ],
-    })
-
-AGENTS["case-management"] = AgentDef(
-    id="case-management",
-    name="Case Management Agent",
-    description="Supervisor view over the Frontline Assist case queue — SLA "
-                "breaches, case timelines with the full inter-agent audit "
-                "trail, and queue analytics.",
-    system=prompts.CASE_MANAGEMENT,
-    toolsets=[(frontline, ["list_cases", "get_case_timeline",
-                           "get_beneficiary_profile"]),
-              (charts, None)],
-    specialists=FRONTLINE_SPECIALISTS,
-    max_iters=12,
-    suggestions={
-        "en": [
-            "What's in the case queue today? Anything breaching SLA?",
-            "Show me the full timeline for case FA-2026-0142.",
-            "Chart open cases by outcome and status.",
-        ],
-        "ar": [
-            "ما الموجود في قائمة الحالات اليوم؟ هل هناك تجاوز لاتفاقية مستوى الخدمة؟",
-            "اعرض السجل الكامل للحالة FA-2026-0142.",
-            "ارسم الحالات المفتوحة حسب النتيجة والحالة.",
-        ],
-    })
-
 
 
 def get_agent(agent_id: str) -> Optional[AgentDef]:

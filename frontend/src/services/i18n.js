@@ -3,7 +3,7 @@
 // query so the agents answer in Arabic too.
 
 const STR = {
-  appTitle: { en: 'SAS Agentic AI Copilot', ar: 'المساعد الذكي الوكيل' },
+  appTitle: { en: 'MCIT Commodity Demand Copilot', ar: 'مساعد توقعات الطلب على السلع' },
   connecting: { en: 'Connecting…', ar: 'جارٍ الاتصال…' },
   connected: { en: 'Connected', ar: 'متصل' },
   notConfigured: { en: 'Not configured', ar: 'غير مُهيّأ' },
@@ -18,8 +18,8 @@ const STR = {
   delete: { en: 'Delete', ar: 'حذف' },
 
   welcome: {
-    en: 'Welcome to the SAS Agentic AI Copilot. Pick an agent from the dropdown above — the SAS Viya Copilot, the Investigation Assistant, the Procurement Integrity Analyst, or Global Intelligence — and ask away.',
-    ar: 'مرحباً بك في المساعد الذكي الوكيل من SAS. اختر وكيلاً من القائمة أعلاه — مساعد SAS Viya، مساعد التحقيقات، محلّل نزاهة المشتريات، أو الاستخبارات العالمية — واسأل ما تشاء.',
+    en: 'Welcome to the MCIT Commodity Demand Copilot. Pick an agent from the dropdown above — the Commodity Demand Forecast Copilot, the SAS Viya Copilot, or Global Intelligence — and ask away.',
+    ar: 'مرحباً بك في مساعد توقعات الطلب على السلع. اختر وكيلاً من القائمة أعلاه — مساعد توقعات الطلب على السلع، مساعد SAS Viya، أو الاستخبارات العالمية — واسأل ما تشاء.',
   },
 
   selectAgent: { en: 'Select an agent', ar: 'اختر وكيلاً' },

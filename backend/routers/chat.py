@@ -13,7 +13,7 @@ from fastapi.responses import Response
 from pydantic import BaseModel
 
 import sasviya.config as viya_config
-import sasvi.config as vi_config
+import commodity.scoring as commodity_scoring
 import websearch.config as web_config
 from agents import registry
 from services import images, runner, store
@@ -48,7 +48,9 @@ async def health():
         "connections": {
             "anthropic": ok,
             "sas_viya": "configured" if viya_config.configured() else "not configured",
-            "visual_investigator": "configured" if vi_config.configured() else "not configured",
+            "commodity_model": (f"MAS module '{commodity_scoring.MODULE_ID}'"
+                                if viya_config.configured()
+                                else "offline sample mode"),
             "tavily": "configured" if web_config.configured() else "not configured",
         },
     }
