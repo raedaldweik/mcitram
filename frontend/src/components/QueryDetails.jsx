@@ -79,7 +79,7 @@ export default function QueryDetails({ data, query, onClose, onOpenSource }) {
     <div className="fixed inset-0 z-[300] flex items-center justify-center p-6" onClick={onClose}
       style={{ background: 'rgba(10,37,64,0.45)', backdropFilter: 'blur(4px)' }}>
       <div className="glass-card w-full max-w-[760px] max-h-[85vh] flex flex-col animate-slide-up"
-        onClick={e => e.stopPropagation()} style={{ background: 'rgba(255,255,255,0.96)' }}>
+        onClick={e => e.stopPropagation()} style={{ background: 'rgba(250,246,236,0.97)' }}>
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-[rgba(188,59,51,0.10)]">

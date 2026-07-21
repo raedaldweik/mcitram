@@ -8,7 +8,7 @@ export default function SourceViewer({ source, onClose }) {
     <div className="fixed inset-0 z-[300] flex items-center justify-center p-6" onClick={onClose}
       style={{ background: 'rgba(10,37,64,0.45)', backdropFilter: 'blur(4px)' }}>
       <div className="glass-card w-full max-w-[640px] max-h-[80vh] flex flex-col animate-slide-up"
-        onClick={e => e.stopPropagation()} style={{ background: 'rgba(255,255,255,0.95)' }}>
+        onClick={e => e.stopPropagation()} style={{ background: 'rgba(250,246,236,0.97)' }}>
         <div className="flex items-center justify-between px-5 py-3 border-b border-[rgba(188,59,51,0.10)]">
           <div className="flex items-center gap-2 min-w-0">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2" className="shrink-0">

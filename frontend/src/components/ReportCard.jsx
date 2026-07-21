@@ -15,7 +15,7 @@ export default function ReportCard({ spec }) {
 
   return (
     <div className="rounded-xl overflow-hidden animate-slide-up"
-      style={{ border: '1px solid rgba(188,59,51,0.18)', background: 'rgba(255,255,255,0.75)' }}>
+      style={{ border: '1px solid rgba(188,59,51,0.18)', background: 'rgba(250,246,236,0.85)' }}>
       {/* Title bar */}
       <div className="flex items-center gap-2 px-3.5 py-2.5"
         style={{ background: 'rgba(188,59,51,0.06)', borderBottom: '1px solid rgba(188,59,51,0.12)' }}>

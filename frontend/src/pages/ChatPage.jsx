@@ -191,7 +191,7 @@ export default function ChatPage() {
                     <input value={renameValue} onChange={e => setRenameValue(e.target.value)}
                       onBlur={() => finishRename(chat.id)} onKeyDown={e => e.key === 'Enter' && finishRename(chat.id)} autoFocus
                       className="w-full rounded-lg px-2 py-1.5 text-xs border outline-none"
-                      style={{ background: 'rgba(255,255,255,0.5)', borderColor: 'var(--gold-hi)', color: 'var(--text)' }} />
+                      style={{ background: 'rgba(251,247,238,0.75)', borderColor: 'var(--gold-hi)', color: 'var(--text)' }} />
                   </div>
                 ) : (
                   <div className="flex items-center">
@@ -221,7 +221,7 @@ export default function ChatPage() {
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setChatMenu(null)} />
                     <div className="absolute right-0 top-full mt-0.5 rounded-xl shadow-xl overflow-hidden z-50 min-w-[130px] animate-fade-up"
-                      style={{ background: 'rgba(255,255,255,0.96)', border: '1px solid rgba(188,59,51,0.2)', backdropFilter: 'blur(20px)' }}>
+                      style={{ background: 'rgba(250,246,236,0.97)', border: '1px solid rgba(188,59,51,0.2)', backdropFilter: 'blur(20px)' }}>
                       <button onClick={() => startRename(chat)} className="w-full flex items-center gap-2 px-3 py-2 text-[11px] hover:bg-[rgba(188,59,51,0.05)]" style={{ color: 'var(--text-md)' }}>
                         {t('rename')}
                       </button>

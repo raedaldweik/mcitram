@@ -28,7 +28,7 @@ export default function Header() {
           title={lang === 'ar' ? 'Switch to English' : 'التبديل إلى العربية'}
           className="px-3.5 py-1.5 rounded-full text-[11.5px] font-bold transition-all hover:scale-105"
           style={{
-            background: 'rgba(255,255,255,0.65)', backdropFilter: 'blur(12px)',
+            background: 'rgba(250,246,236,0.75)', backdropFilter: 'blur(12px)',
             border: '1px solid rgba(188,59,51,0.30)', color: 'var(--gold-lo)',
           }}>
           {t('langButton')}

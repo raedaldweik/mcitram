@@ -44,7 +44,7 @@ export default function TargetSelector({ agents, collections, target, onChange, 
       <button onClick={() => setOpen(!open)}
         className="flex items-center gap-2 pl-3 pr-2.5 py-1.5 rounded-lg text-[12px] font-semibold transition-all"
         style={{
-          background: 'rgba(255,255,255,0.65)', backdropFilter: 'blur(12px)',
+          background: 'rgba(250,246,236,0.75)', backdropFilter: 'blur(12px)',
           border: '1px solid rgba(188,59,51,0.22)', color: 'var(--text)', minWidth: 220,
         }}>
         {/* status dot */}
@@ -72,7 +72,7 @@ export default function TargetSelector({ agents, collections, target, onChange, 
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div className="absolute right-0 top-full mt-1 rounded-xl shadow-xl overflow-hidden z-50 w-[300px] max-h-[340px] overflow-y-auto animate-fade-up"
-            style={{ background: 'rgba(255,255,255,0.97)', border: '1px solid rgba(188,59,51,0.2)', backdropFilter: 'blur(20px)' }}>
+            style={{ background: 'rgba(250,246,236,0.98)', border: '1px solid rgba(188,59,51,0.2)', backdropFilter: 'blur(20px)' }}>
             {error ? (
               <p className="px-3 py-3 text-[11.5px]" style={{ color: 'var(--red)' }}>{error}</p>
             ) : all.length === 0 ? (
