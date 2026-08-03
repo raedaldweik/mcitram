@@ -481,3 +481,7 @@ html, body {
 }
 /* keep code, traces and identifiers left-to-right inside the Arabic UI */
 [dir="rtl"] pre, [dir="rtl"] code, [dir="rtl"] .font-mono { direction: ltr; text-align: left; }
+/* Charts are drawn LTR like the dashboard (numbers, units, months stay
+   English) — RTL flips SVG text-anchor sides, pushing the axis labels into
+   the plot. The Arabic title/subtitle/legend outside .cc-plot stay RTL. */
+[dir="rtl"] .cc-plot, [dir="rtl"] .cc-svg { direction: ltr; }
