@@ -6,9 +6,11 @@ import { useLanguage } from '../context/LanguageContext';
 import MapCard from './MapCard';
 import ChartCard from './ChartCard';
 import ReportCard from './ReportCard';
+import ExecReportCard from './ExecReportCard';
 import { extractMapSpec } from '../services/mapSpec';
 import { extractChartSpecs } from '../services/chartSpec';
 import { extractReportImages } from '../services/reportSpec';
+import { extractExecReports } from '../services/execReportSpec';
 
 const sourceLabel = (doc, i) => {
   const meta = doc?.metadata || {};
@@ -50,6 +52,7 @@ export default function ResponseCard({ data, onOpenSource, onOpenDetails }) {
   const mapSpec = useMemo(() => extractMapSpec(data), [data]);
   const chartSpecs = useMemo(() => extractChartSpecs(data), [data]);
   const reportSpecs = useMemo(() => extractReportImages(data), [data]);
+  const execReports = useMemo(() => extractExecReports(data), [data]);
 
   return (
     <div className="animate-slide-up space-y-2.5 max-w-[640px]">
@@ -61,6 +64,9 @@ export default function ResponseCard({ data, onOpenSource, onOpenDetails }) {
           </ReactMarkdown>
         </div>
       </div>
+
+      {/* Executive report document, when the agent called render_report */}
+      {execReports.map((spec, i) => <ExecReportCard key={i} spec={spec} />)}
 
       {/* Interactive TomTom map, when the agent called tomtom-render-map */}
       {mapSpec && <MapCard spec={mapSpec} />}

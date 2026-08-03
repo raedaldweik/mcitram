@@ -69,6 +69,7 @@ AGENTS: dict[str, AgentDef] = {
                 "Will the frozen chicken reserve hold above the 3-month policy floor all year?",
                 "What if demand surges 20% during Ramadan and a third of deliveries are delayed?",
                 "How did rice demand behave during past Ramadans in the training data?",
+                "Prepare an executive report on rice supply risk for the reserve committee.",
                 "Score one record live against the SAS model and show me the raw call.",
             ],
             "ar": [
@@ -76,6 +77,7 @@ AGENTS: dict[str, AgentDef] = {
                 "هل يبقى احتياطي الدجاج المجمد فوق حد الثلاثة أشهر طوال العام؟",
                 "ماذا لو ارتفع الطلب 20٪ في رمضان وتأخر ثلث الشحنات؟",
                 "كيف كان الطلب على الأرز في شهور رمضان السابقة في بيانات التدريب؟",
+                "أعدّ تقريراً تنفيذياً عن مخاطر إمدادات الأرز للجنة الاحتياطي.",
                 "احسب سجلاً واحداً مباشرة عبر نموذج SAS وأرني الاستدعاء الفعلي.",
             ],
         }),
